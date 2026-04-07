@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EazyChat</title>
+  <style>
+  
+:root {
+  --bg: #0d1117;
+  --panel: #161b22;
+  --text: #e6edf3;
+  --muted: #7d8590;
+  --border: #30363d;
+  --accent: #00d4aa;
+  --accent-hover: #00b894;
+  --active: rgba(0, 212, 170, 0.1);
+  --me: #0d3b33;
+  --other: #21262d;
+  --danger: #f85149;
+  --danger-bg: rgba(248, 81, 73, 0.12);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(0, 212, 170, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 90% 80%, rgba(0, 150, 200, 0.05) 0%, transparent 50%);
+  padding: 16px;
+}
+
+.layout {
+  max-width: 1080px;
+  margin: 0 auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(0, 212, 170, 0.05),
+    0 24px 80px rgba(0, 0, 0, 0.5),
+    0 4px 16px rgba(0, 0, 0, 0.3);
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  height: calc(100vh - 32px);
+}
+
+.users {
+  border-right: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(0, 212, 170, 0.02) 0%, transparent 40%);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.users-header {
+  padding: 18px 16px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.me-line {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.user-list {
+  list-style: none;
+  margin: 0;
+  padding: 10px;
+  overflow-y: auto;
+  display: grid;
+  gap: 4px;
+}
+
+.user-list::-webkit-scrollbar { width: 4px; }
+.user-list::-webkit-scrollbar-track { background: transparent; }
+.user-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.user-item {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 11px 14px;
+  cursor: pointer;
+  background: transparent;
+  font-size: 0.92rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.user-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  width: 3px;
+  height: 60%;
+  background: var(--accent);
+  border-radius: 0 3px 3px 0;
+  transition: transform 0.2s ease;
+}
+
+.user-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--border);
+}
+
+.user-item.active {
+  background: var(--active);
+  border-color: rgba(0, 212, 170, 0.2);
+  color: var(--accent);
+}
+
+.user-item.active::before {
+  transform: translateY(-50%) scaleY(1);
+}
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.chat-header {
+  border-bottom: 1px solid var(--border);
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(12px);
+}
+
+.chat-title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+button {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.82rem;
+  transition: all 0.15s ease;
+}
+
+button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.users-toggle { display: none; }
+.danger {
+  color: var(--danger);
+  background: var(--danger-bg);
+  border-color: rgba(248, 81, 73, 0.2);
+}
+
+.danger:hover {
+  background: rgba(248, 81, 73, 0.2);
+  border-color: rgba(248, 81, 73, 0.35);
+}
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px;
+  display: grid;
+  gap: 8px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(0, 212, 170, 0.015) 0%, transparent 50%),
+    var(--bg);
+}
+
+.messages::-webkit-scrollbar { width: 5px; }
+.messages::-webkit-scrollbar-track { background: transparent; }
+.messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.bubble {
+  max-width: 65%;
+  border-radius: 8px;
+  padding: 6px 8px 4px;
+  border: none;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+  animation: bubbleIn 0.2s ease;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  word-wrap: break-word;
+}
+
+@keyframes bubbleIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.bubble.me {
+  margin-left: auto;
+  background: #005c4b;
+  border-bottom-right-radius: 2px;
+}
+
+.bubble.other {
+  margin-right: auto;
+  background: #202c33;
+  border-bottom-left-radius: 2px;
+}
+
+.meta {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 1px;
+  font-weight: 400;
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.bubble.me .meta {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.empty {
+  color: var(--muted);
+  text-align: center;
+  margin-top: 24px;
+  font-size: 0.85rem;
+}
+
+.compose {
+  border-top: 1px solid var(--border);
+  padding: 12px 16px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.compose input {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  font-family: inherit;
+}
+
+.compose input::placeholder {
+  color: var(--muted);
+}
+
+.compose input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.12);
+}
+
+.send-btn {
+  background: var(--accent) !important;
+  color: #0d1117 !important;
+  border-color: var(--accent) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em;
+  padding: 12px 22px !important;
+}
+
+.send-btn:hover {
+  background: var(--accent-hover) !important;
+  border-color: var(--accent-hover) !important;
+  box-shadow: 0 0 20px rgba(0, 212, 170, 0.2);
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 300px;
+  max-width: 85vw;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+  transform: translateX(-100%);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer.open { transform: translateX(0); }
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  z-index: 19;
+}
+
+.overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (max-width: 860px) {
+  body { padding: 0; }
+  .layout {
+    height: 100vh;
+    border-radius: 0;
+    border: 0;
+    grid-template-columns: 1fr;
+  }
+  .layout > .users { display: none; }
+  .users-toggle { display: inline-block; }
+}
+  </style>
+</head>
+<body>
+  <div id="overlay" class="overlay"></div>
+  <aside id="mobileDrawer" class="drawer">
+    <div class="users-header">Users</div>
+    <div id="mobileMeLine" class="me-line"></div>
+    <ul id="mobileUserList" class="user-list"></ul>
+  </aside>
+
+  <main class="layout">
+    <aside class="users">
+      <div class="users-header">Users</div>
+      <div id="desktopMeLine" class="me-line"></div>
+      <ul id="desktopUserList" class="user-list"></ul>
+    </aside>
+
+    <section class="chat">
+      <div class="chat-header">
+        <div class="chat-title" id="chatTitle">Select a user to chat</div>
+        <div class="actions">
+          <button id="usersToggle" class="users-toggle" type="button">Users</button>
+          <button id="deleteAllBtn" class="danger" type="button">Delete All</button>
+          <button id="logoutBtn" class="danger" type="button">Logout</button>
+        </div>
+      </div>
+
+      <div id="messages" class="messages"></div>
+      <form id="messageForm" class="compose">
+        <input id="messageInput" type="text" maxlength="500" placeholder="Type a message..." required />
+        <button class="send-btn" type="submit">Send</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const token = localStorage.getItem("token");
+    const userRaw = localStorage.getItem("user");
+    if (!token || !userRaw) {
+      window.location.href = "/login.html";
+    }
+
+    const me = JSON.parse(userRaw);
+    const socket = io();
+
+    const desktopUserList = document.getElementById("desktopUserList");
+    const mobileUserList = document.getElementById("mobileUserList");
+    const desktopMeLine = document.getElementById("desktopMeLine");
+    const mobileMeLine = document.getElementById("mobileMeLine");
+    const messagesEl = document.getElementById("messages");
+    const messageForm = document.getElementById("messageForm");
+    const messageInput = document.getElementById("messageInput");
+    const chatTitle = document.getElementById("chatTitle");
+    const usersToggle = document.getElementById("usersToggle");
+    const mobileDrawer = document.getElementById("mobileDrawer");
+    const overlay = document.getElementById("overlay");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const deleteAllBtn = document.getElementById("deleteAllBtn");
+    let users = [];
+    let activeUser = null;
+    const renderedMessageIds = new Set();
+
+    const getId = (value) => {
+      if (!value) {
+        return "";
+      }
+
+      if (typeof value === "string") {
+        return value;
+      }
+
+      if (typeof value === "object" && value._id) {
+        return getId(value._id);
+      }
+
+      if (typeof value.toString === "function") {
+        return value.toString();
+      }
+
+      return "";
+    };
+
+    const myId = getId(me.id);
+    const myName = me.username || me.email || "Unknown";
+    desktopMeLine.textContent = `Logged in as: ${myName}`;
+    mobileMeLine.textContent = `Logged in as: ${myName}`;
+
+    socket.on("connect", () => {
+      socket.emit("user:join", { userId: myId });
+    });
+
+    const closeDrawer = () => {
+      mobileDrawer.classList.remove("open");
+      overlay.classList.remove("open");
+    };
+
+    const openDrawer = () => {
+      mobileDrawer.classList.add("open");
+      overlay.classList.add("open");
+    };
+
+    usersToggle.addEventListener("click", openDrawer);
+    overlay.addEventListener("click", closeDrawer);
+
+    const userRow = (u) => {
+      const userId = getId(u._id);
+      const activeId = activeUser ? getId(activeUser._id) : "";
+      const isActive = activeId === userId;
+      return `<li class="user-item${isActive ? " active" : ""}" data-id="${userId}">${u.username}</li>`;
+    };
+
+    const renderUsers = () => {
+      const myId = getId(me.id);
+      const otherUsers = users.filter((u) => getId(u._id) !== myId);
+      if (!otherUsers.length) {
+        desktopUserList.innerHTML = '<li class="empty">No users online</li>';
+        mobileUserList.innerHTML = '<li class="empty">No users online</li>';
+        return;
+      }
+
+      const html = otherUsers.map(userRow).join("");
+      desktopUserList.innerHTML = html;
+      mobileUserList.innerHTML = html;
+    };
+
+    const attachUserClickHandlers = () => {
+      const bind = (listEl) => {
+        listEl.querySelectorAll(".user-item").forEach((item) => {
+          item.addEventListener("click", async () => {
+            const id = item.getAttribute("data-id");
+            activeUser = users.find((u) => getId(u._id) === id) || null;
+            chatTitle.textContent = activeUser ? `Chat with ${activeUser.username}` : "Select a user to chat";
+            renderUsers();
+            attachUserClickHandlers();
+            if (window.innerWidth <= 860) {
+              closeDrawer();
+            }
+            await loadMessages();
+          });
+        });
+      };
+
+      bind(desktopUserList);
+      bind(mobileUserList);
+    };
+
+    const appendMessage = (msg) => {
+      const messageId = msg && msg._id ? getId(msg._id) : "";
+      if (messageId && renderedMessageIds.has(messageId)) {
+        return;
+      }
+      if (messageId) {
+        renderedMessageIds.add(messageId);
+      }
+
+      const mine = getId(msg.sender?._id) === getId(me.id);
+      const senderName = msg.sender ? msg.sender.username : "Unknown";
+      const time = new Date(msg.createdAt || Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+      const bubble = document.createElement("div");
+      bubble.className = `bubble ${mine ? "me" : "other"}`;
+      bubble.innerHTML = `<div class="meta">${senderName} - ${time}</div><div>${msg.text}</div>`;
+      messagesEl.appendChild(bubble);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    };
+
+    const renderMessages = (messages) => {
+      messagesEl.innerHTML = "";
+      renderedMessageIds.clear();
+      if (!activeUser) {
+        messagesEl.innerHTML = '<div class="empty">Choose a user from Users list to start chatting.</div>';
+        return;
+      }
+
+      if (!messages.length) {
+        messagesEl.innerHTML = '<div class="empty">No messages yet.</div>';
+        return;
+      }
+
+      messages.forEach(appendMessage);
+    };
+
+    const loadUsers = async () => {
+      const res = await fetch("/api/chat/online-users");
+      const data = await res.json();
+      users = data.users || [];
+      renderUsers();
+      attachUserClickHandlers();
+
+      if (!activeUser) {
+        const myId = getId(me.id);
+        const first = users.find((u) => getId(u._id) !== myId);
+        if (first) {
+          activeUser = first;
+          chatTitle.textContent = `Chat with ${first.username}`;
+          renderUsers();
+          attachUserClickHandlers();
+          await loadMessages();
+        }
+      }
+    };
+
+    const loadMessages = async () => {
+      if (!activeUser) {
+        renderMessages([]);
+        return;
+      }
+
+      const params = new URLSearchParams({ userId: me.id, chatWith: activeUser._id });
+      params.set("userId", getId(me.id));
+      params.set("chatWith", getId(activeUser._id));
+      const res = await fetch(`/api/chat/messages?${params.toString()}`);
+      const data = await res.json();
+      renderMessages(data.messages || []);
+    };
+
+    socket.on("message:new", (payload) => {
+      const msg = payload && payload.message;
+      if (!msg || !activeUser) {
+        return;
+      }
+
+      const senderId = msg.sender && msg.sender._id;
+      const receiverId = msg.receiver && msg.receiver._id;
+      const myId = getId(me.id);
+      const activeId = getId(activeUser._id);
+      const isCurrentConversation =
+        (getId(senderId) === myId && getId(receiverId) === activeId) ||
+        (getId(senderId) === activeId && getId(receiverId) === myId);
+
+      if (isCurrentConversation) {
+        const empty = messagesEl.querySelector(".empty");
+        if (empty) {
+          empty.remove();
+        }
+        appendMessage(msg);
+      }
+    });
+
+    socket.on("messages:cleared", () => {
+      renderMessages([]);
+    });
+
+    messageForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      if (!activeUser) {
+        alert("Please choose a user first.");
+        return;
+      }
+
+      const text = messageInput.value.trim();
+      if (!text) {
+        return;
+      }
+
+      socket.emit("message:send", {
+        senderId: getId(me.id),
+        receiverId: getId(activeUser._id),
+        text
+      }, (response) => {
+        if (!response || !response.ok) {
+          return;
+        }
+
+        appendMessage(response.message);
+        messageInput.value = "";
+      });
+    });
+
+    deleteAllBtn.addEventListener("click", async () => {
+      if (!confirm("Delete all messages from database?")) {
+        return;
+      }
+      await fetch("/api/chat/messages", { method: "DELETE" });
+      renderMessages([]);
+    });
+
+    logoutBtn.addEventListener("click", async () => {
+      try {
+        await fetch("/api/users/logout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: me.id })
+        });
+      } catch (_error) {}
+
+      socket.disconnect();
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login.html";
+    });
+
+    window.addEventListener("beforeunload", () => socket.disconnect());
+
+    Promise.resolve()
+      .then(loadUsers)
+      .catch(() => {
+        messagesEl.innerHTML = '<div class="empty">Could not load users.</div>';
+      });
+
+    setInterval(loadUsers, 5000);
+  </script>
+</body>
+</html>

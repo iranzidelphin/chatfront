@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #07070e;
+      --card: rgba(255, 255, 255, 0.035);
+      --card-border: rgba(255, 255, 255, 0.07);
+      --text: #ededf2;
+      --text-dim: #7878a0;
+      --accent: #e8a03e;
+      --accent-bright: #f5b452;
+      --accent-glow: rgba(232, 160, 62, 0.22);
+      --error: #ff5c5c;
+      --input-bg: rgba(255, 255, 255, 0.055);
+      --input-border: rgba(255, 255, 255, 0.09);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: 'DM Sans', sans-serif;
+      display: grid;
+      place-items: center;
+      background: var(--bg);
+      color: var(--text);
+      padding: 20px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── Animated background orbs ── */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(110px);
+      opacity: .45;
+      pointer-events: none;
+      will-change: transform;
+    }
+    .orb--a {
+      width: 520px; height: 520px;
+      background: radial-gradient(circle, rgba(232,160,62,.22), transparent 70%);
+      top: -160px; left: -120px;
+      animation: drift 22s ease-in-out infinite;
+    }
+    .orb--b {
+      width: 420px; height: 420px;
+      background: radial-gradient(circle, rgba(62,140,232,.18), transparent 70%);
+      bottom: -120px; right: -90px;
+      animation: drift 18s ease-in-out infinite -6s;
+    }
+    .orb--c {
+      width: 320px; height: 320px;
+      background: radial-gradient(circle, rgba(160,62,232,.16), transparent 70%);
+      top: 45%; left: 58%;
+      animation: drift 26s ease-in-out infinite -12s;
+    }
+    @keyframes drift {
+      0%, 100% { transform: translate(0,0) scale(1); }
+      25%  { transform: translate(55px,-35px) scale(1.08); }
+      50%  { transform: translate(-25px,55px) scale(.94); }
+      75%  { transform: translate(40px,25px) scale(1.04); }
+    }
+
+    /* Subtle dot-grid overlay */
+    .grid-overlay {
+      position: fixed; inset: 0;
+      background-image:
+        radial-gradient(rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size: 32px 32px;
+      pointer-events: none;
+    }
+
+    /* ── Card ── */
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 22px;
+      padding: 44px 38px 36px;
+      backdrop-filter: blur(48px);
+      -webkit-backdrop-filter: blur(48px);
+      position: relative;
+      z-index: 1;
+      animation: cardUp .85s cubic-bezier(.16,1,.3,1) both;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.025),
+        0 24px 64px rgba(0,0,0,.45),
+        0 2px 8px rgba(0,0,0,.2);
+    }
+    @keyframes cardUp {
+      from { opacity: 0; transform: translateY(34px) scale(.96); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* ── Brand mark ── */
+    .brand {
+      width: 50px; height: 50px;
+      border-radius: 15px;
+      background: linear-gradient(135deg, var(--accent), #c97e22);
+      display: grid; place-items: center;
+      margin-bottom: 30px;
+      box-shadow: 0 8px 28px var(--accent-glow);
+      animation: brandPulse 3s ease-in-out infinite;
+    }
+    .brand i { font-size: 20px; color: #fff; }
+    @keyframes brandPulse {
+      0%,100% { box-shadow: 0 8px 28px var(--accent-glow); }
+      50%     { box-shadow: 0 8px 40px rgba(232,160,62,.32); }
+    }
+
+    /* ── Typography ── */
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -.025em;
+      line-height: 1.15;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: var(--text-dim);
+      font-size: .92rem;
+      line-height: 1.55;
+      margin-bottom: 34px;
+    }
+
+    /* ── Input groups ── */
+    .field { margin-bottom: 22px; }
+    .field label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .input-wrap .ico {
+      position: absolute;
+      left: 15px;
+      font-size: .88rem;
+      color: var(--text-dim);
+      transition: color .3s, transform .3s;
+      pointer-events: none;
+    }
+    .input-wrap.focused .ico {
+      color: var(--accent);
+      transform: scale(1.1);
+    }
+    .input-wrap input {
+      width: 100%;
+      padding: 14px 15px 14px 44px;
+      background: var(--input-bg);
+      border: 1.5px solid var(--input-border);
+      border-radius: 13px;
+      font-size: .95rem;
+      color: var(--text);
+      font-family: inherit;
+      outline: none;
+      transition: border-color .3s, box-shadow .3s, background .3s;
+    }
+    .input-wrap input::placeholder {
+      color: rgba(120,120,160,.45);
+    }
+    .input-wrap input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3.5px var(--accent-glow);
+      background: rgba(255,255,255,.075);
+    }
+
+    /* Password toggle */
+    .pw-toggle {
+      position: absolute;
+      right: 14px;
+      background: none; border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      padding: 4px;
+      font-size: .88rem;
+      transition: color .2s;
+      line-height: 1;
+    }
+    .pw-toggle:hover { color: var(--text); }
+    .pw-toggle:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    /* ── Submit button ── */
+    .btn {
+      width: 100%;
+      padding: 15px;
+      border: 0;
+      border-radius: 13px;
+      color: #0a0a0f;
+      background: linear-gradient(135deg, var(--accent), #c97e22);
+      font-size: .95rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform .2s, box-shadow .35s;
+      margin-top: 6px;
+      letter-spacing: .01em;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 36px var(--accent-glow);
+    }
+    .btn:active { transform: translateY(0); }
+    .btn::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.22) 50%, transparent 70%);
+      transform: translateX(-110%);
+      transition: transform .55s ease;
+    }
+    .btn:hover::after { transform: translateX(110%); }
+
+    .btn.is-loading {
+      pointer-events: none;
+      opacity: .75;
+    }
+    .btn .btn-label { transition: opacity .2s; }
+    .btn.is-loading .btn-label { opacity: 0; }
+
+    .btn .spin {
+      position: absolute;
+      inset: 0;
+      display: grid; place-items: center;
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    .btn.is-loading .spin { opacity: 1; }
+    .btn .spin::after {
+      content: '';
+      width: 22px; height: 22px;
+      border: 2.5px solid rgba(10,10,15,.18);
+      border-top-color: #0a0a0f;
+      border-radius: 50%;
+      animation: rotate .65s linear infinite;
+    }
+    @keyframes rotate { to { transform: rotate(360deg); } }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--accent-bright);
+      outline-offset: 3px;
+    }
+
+    /* ── Error message ── */
+    .msg {
+      min-height: 26px;
+      margin-top: 14px;
+      font-size: .865rem;
+      color: var(--error);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity .3s, transform .3s;
+    }
+    .msg.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .msg i { font-size: .78rem; flex-shrink: 0; }
+
+    /* ── Footer link ── */
+    .foot {
+      margin-top: 30px;
+      text-align: center;
+      font-size: .9rem;
+      color: var(--text-dim);
+    }
+    .foot a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      position: relative;
+    }
+    .foot a::after {
+      content: '';
+      position: absolute;
+      left: 0; bottom: -2px;
+      width: 0; height: 1.5px;
+      background: var(--accent-bright);
+      transition: width .3s;
+    }
+    .foot a:hover::after { width: 100%; }
+    .foot a:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+      border-radius: 3px;
+    }
+
+    /* ── Reduced motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      .orb, .brand { animation: none !important; }
+      .card { animation: none !important; opacity: 1; }
+      .btn::after { transition: none; }
+      .msg { transition: none; }
+    }
+
+    /* ── Small screens ── */
+    @media (max-width: 480px) {
+      .card { padding: 32px 24px 28px; border-radius: 18px; }
+      h1 { font-size: 1.55rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background layers -->
+  <div class="orb orb--a" aria-hidden="true"></div>
+  <div class="orb orb--b" aria-hidden="true"></div>
+  <div class="orb orb--c" aria-hidden="true"></div>
+  <div class="grid-overlay" aria-hidden="true"></div>
+
+  <main class="card">
+    <div class="brand" aria-hidden="true">
+      <i class="fa-solid fa-bolt"></i>
+    </div>
+
+    <h1>Welcome Back</h1>
+    <p class="subtitle">Login with username or email and password.</p>
+
+    <form id="loginForm" novalidate>
+      <div class="field">
+        <label for="login">Username or Email</label>
+        <div class="input-wrap" data-wrap>
+          <i class="fa-regular fa-user ico"></i>
+          <input id="login" name="login" type="text" placeholder="Enter your username" required autocomplete="username" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="input-wrap" data-wrap>
+          <i class="fa-solid fa-lock ico"></i>
+          <input id="password" name="password" type="password" placeholder="Enter your password" required autocomplete="current-password" />
+          <button type="button" class="pw-toggle" aria-label="Toggle password visibility" data-toggle>
+            <i class="fa-regular fa-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn">
+        <span class="btn-label">Sign In</span>
+        <span class="spin" aria-hidden="true"></span>
+      </button>
+
+      <div id="message" class="msg" aria-live="polite"></div>
+    </form>
+
+    <div class="foot">No account yet? <a href="/register.html">Create one</a></div>
+  </main>
+
+  <script>
+    const form    = document.getElementById('loginForm');
+    const msgEl   = document.getElementById('message');
+    const btn     = form.querySelector('.btn');
+
+    /* ── Focus ring on wrapper (for icon color change) ── */
+    document.querySelectorAll('[data-wrap]').forEach(wrap => {
+      const input = wrap.querySelector('input');
+      input.addEventListener('focus', () => wrap.classList.add('focused'));
+      input.addEventListener('blur',  () => wrap.classList.remove('focused'));
+    });
+
+    /* ── Password visibility toggle ── */
+    const toggleBtn = document.querySelector('[data-toggle]');
+    toggleBtn.addEventListener('click', () => {
+      const pwInput = document.getElementById('password');
+      const icon    = toggleBtn.querySelector('i');
+      const show    = pwInput.type === 'password';
+      pwInput.type  = show ? 'text' : 'password';
+      icon.classList.toggle('fa-eye', !show);
+      icon.classList.toggle('fa-eye-slash', show);
+    });
+
+    /* ── Show / hide error helper ── */
+    function showError(text) {
+      msgEl.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>' + text;
+      msgEl.classList.add('visible');
+    }
+    function clearError() {
+      msgEl.classList.remove('visible');
+    }
+
+    /* ── Form submission ── */
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearError();
+
+      const payload = {
+        login:    form.login.value.trim(),
+        password: form.password.value
+      };
+
+      /* Basic client-side check */
+      if (!payload.login || !payload.password) {
+        showError('Please fill in all fields.');
+        return;
+      }
+
+      btn.classList.add('is-loading');
+
+      try {
+        const res  = await fetch('/api/users/login', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          showError(data.message || 'Login failed');
+          btn.classList.remove('is-loading');
+          return;
+        }
+
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        window.location.href = '/chatdashboard.html';
+      } catch (_) {
+        showError('Could not connect to server');
+        btn.classList.remove('is-loading');
+      }
+    });
+  </script>
+</body>
+</html>
