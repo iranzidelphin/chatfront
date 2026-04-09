@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chateazy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#09131c;--panel:rgba(9,18,27,.86);--line:rgba(255,255,255,.08);--text:#eef6ff;--muted:#97aabd;--accent:#ffb24d;--accent2:#ff8f47;--ok:#65d7a0;--bad:#ff8585;--bubble:#ffffff10}
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:"Manrope",sans-serif;background:radial-gradient(circle at top left,rgba(255,178,77,.18),transparent 30%),radial-gradient(circle at bottom right,rgba(87,177,255,.16),transparent 28%),linear-gradient(180deg,#081018,#09131c);color:var(--text)}
+    body{padding:20px}button,input{font:inherit}a{color:#ffd69b;text-decoration:none}
+    .app{min-height:calc(100vh - 40px);max-width:1200px;margin:0 auto;border:1px solid var(--line);border-radius:28px;overflow:hidden;background:linear-gradient(180deg,rgba(13,24,35,.96),rgba(7,16,24,.92));box-shadow:0 28px 80px rgba(0,0,0,.35)}
+    .top{padding:22px 26px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;align-items:center;background:#ffffff05}
+    .brand{display:flex;align-items:center;gap:14px}.logo{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font:800 1.2rem "Syne",sans-serif;color:#2d1400;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 14px 30px rgba(255,143,71,.22)}
+    .brand h1{margin:0;font:800 1.5rem "Syne",sans-serif;letter-spacing:-.05em}.brand p{margin:3px 0 0;color:var(--muted);font-size:.94rem}.status{padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:#ffffff05;color:var(--muted);font-size:.88rem}
+    .screen{display:none}.screen.on{display:block}
+    .auth{display:grid;grid-template-columns:1.05fr .95fr;min-height:calc(100vh - 125px)}.hero{padding:42px;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(255,178,77,.08),transparent 45%),#ffffff03;display:flex;flex-direction:column;justify-content:space-between;gap:30px}
+    .tag{display:inline-block;padding:8px 12px;border-radius:999px;background:rgba(255,178,77,.14);color:#ffd9a8;font-size:.82rem;font-weight:700}.hero h2{margin:18px 0 14px;max-width:8ch;font:800 clamp(2.2rem,5vw,4rem) "Syne",sans-serif;line-height:.95;letter-spacing:-.07em}.hero p{max-width:45ch;margin:0;color:#c2d1de;line-height:1.7}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.tile{padding:16px;border-radius:18px;border:1px solid var(--line);background:#ffffff05}.tile strong{display:block;margin-bottom:6px}.tile span{color:var(--muted);font-size:.92rem;line-height:1.55}
+    .pane{display:flex;align-items:center;justify-content:center;padding:32px}.card{width:min(430px,100%);padding:30px;border-radius:24px;border:1px solid var(--line);background:var(--panel)}
+    .card h3{margin:0 0 8px;font-size:1.85rem;letter-spacing:-.04em}.card .sub{margin:0 0 22px;color:var(--muted);line-height:1.6}
+    .field{margin-bottom:14px}.field label{display:block;margin-bottom:8px;font-weight:700;font-size:.86rem;color:#bfd0de}.field input{width:100%;padding:14px 15px;border-radius:14px;border:1px solid var(--line);outline:none;background:#ffffff08;color:var(--text)}.field input:focus{border-color:#ffb24daa;box-shadow:0 0 0 4px rgba(255,178,77,.14)}
+    .btns{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}.btn{border:0;border-radius:14px;padding:14px 18px;font-weight:800;cursor:pointer}.primary{flex:1;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#2a1100}.ghost{background:#ffffff08;color:var(--text);border:1px solid var(--line)}.danger{background:rgba(255,133,133,.12);color:#ffc7c7;border:1px solid rgba(255,133,133,.18)}.msg{min-height:22px;margin-top:12px;font-weight:700;font-size:.92rem}.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
+    .chat{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 125px)}.side{border-right:1px solid var(--line);background:#ffffff03;display:flex;flex-direction:column;min-height:0}.me{padding:22px;border-bottom:1px solid var(--line)}.eyebrow{margin:0 0 8px;color:var(--muted);font-size:.77rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+    .mebox{padding:16px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(160deg,rgba(255,178,77,.1),#ffffff04)}.mebox strong{display:block}.mebox span{color:var(--muted);font-size:.9rem}
+    .users{padding:16px;overflow:auto;display:grid;gap:10px}.user{width:100%;text-align:left;padding:14px 15px;border-radius:18px;border:1px solid var(--line);background:#ffffff05;color:var(--text);cursor:pointer}.user:hover,.user.active{border-color:rgba(255,178,77,.34);background:rgba(255,178,77,.11)}.user strong{display:block;margin-bottom:4px}.user span{font-size:.84rem;color:var(--muted)}
+    .userline{display:flex;align-items:center;gap:10px}.dot{width:10px;height:10px;border-radius:50%;flex:none;box-shadow:0 0 0 3px rgba(255,255,255,.04)}.dot.online{background:var(--ok);box-shadow:0 0 0 3px rgba(101,215,160,.14)}.dot.offline{background:var(--bad);box-shadow:0 0 0 3px rgba(255,133,133,.14)}
+    .mainchat{display:flex;flex-direction:column;min-height:0}.head{padding:20px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;background:#ffffff03}.head strong{display:block}.head span{color:var(--muted);font-size:.9rem}.acts{display:flex;gap:10px;flex-wrap:wrap}
+    .msgs{flex:1;overflow:auto;padding:20px 22px;display:flex;flex-direction:column;gap:12px;background:radial-gradient(circle at top,rgba(255,178,77,.06),transparent 28%)}.empty{margin:auto;max-width:30ch;text-align:center;color:var(--muted);line-height:1.7}
+    .bubble{max-width:min(72%,520px);padding:12px 14px;border-radius:18px;line-height:1.5;box-shadow:0 8px 20px rgba(0,0,0,.12)}.bubble.me{align-self:flex-end;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#2b1200;border-bottom-right-radius:6px}.bubble.other{align-self:flex-start;background:var(--bubble);border:1px solid var(--line);border-bottom-left-radius:6px}.bubble.pending{opacity:.74}.meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:5px;font-size:.74rem;font-weight:700;opacity:.72}
+    .compose{padding:18px 22px 22px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr auto;gap:12px;background:#ffffff03}.compose input{width:100%;padding:14px 15px;border-radius:16px;border:1px solid var(--line);outline:none;background:#ffffff08;color:var(--text)}.compose input:focus{border-color:#ffb24daa;box-shadow:0 0 0 4px rgba(255,178,77,.14)}
+    .toggle{display:none}.overlay{display:none}
+    @media (max-width:980px){body{padding:12px}.app{min-height:calc(100vh - 24px)}.auth{grid-template-columns:1fr}.hero{border-right:0;border-bottom:1px solid var(--line);padding:24px}.chat{grid-template-columns:1fr}.side{position:fixed;top:0;left:0;bottom:0;width:min(320px,86vw);z-index:10;transform:translateX(-102%);transition:transform .22s ease;background:rgba(9,18,27,.98);box-shadow:0 24px 70px rgba(0,0,0,.38)}.side.open{transform:translateX(0)}.toggle{display:inline-flex}.overlay{display:block;position:fixed;inset:0;background:rgba(0,0,0,.48);opacity:0;pointer-events:none;transition:opacity .22s ease;z-index:9}.overlay.on{opacity:1;pointer-events:auto}}
+    @media (max-width:640px){.top{padding:18px}.status{display:none}.pane,.card,.head,.msgs,.compose{padding-left:16px;padding-right:16px}.card{padding:22px}.grid{grid-template-columns:1fr}.compose{grid-template-columns:1fr}.bubble{max-width:88%}}
+  </style>
+</head>
+<body>
+  <div id="overlay" class="overlay"></div>
+  <div class="app">
+    <header class="top">
+      <div class="brand">
+        <div class="logo">C</div>
+        <div>
+          <h1>Chateazy</h1>
+          <p>Single page chat app on your existing backend.</p>
+        </div>
+      </div>
+      <div id="status" class="status">Ready</div>
+    </header>
+    <section id="auth" class="screen on">
+      <div class="auth">
+        <aside class="hero">
+          <div>
+            <div class="tag">Single Page Experience</div>
+            <h2>One flow for login, register, and chat.</h2>
+            <p>Chateazy keeps every feature in one place while still talking to the same `/api/users`, `/api/chat`, and Socket.IO backend you already have.</p>
+          </div>
+          <div class="grid">
+            <div class="tile"><strong>Register fast</strong><span>Create a new account without leaving the page.</span></div>
+            <div class="tile"><strong>Login instantly</strong><span>Move from auth to chat with a route change, not a reload.</span></div>
+            <div class="tile"><strong>Real-time chat</strong><span>Uses the current `message:send` and `message:new` events.</span></div>
+            <div class="tile"><strong>Online users</strong><span>Still loads live users from your existing backend endpoint.</span></div>
+          </div>
+        </aside>
+        <div class="pane">
+          <div class="card">
+            <div id="loginView">
+              <h3>Welcome back</h3>
+              <p class="sub">Sign in to open your Chateazy workspace.</p>
+              <form id="loginForm">
+                <div class="field"><label for="loginInput">Username or Email</label><input id="loginInput" name="login" type="text" autocomplete="username" required /></div>
+                <div class="field"><label for="loginPassword">Password</label><input id="loginPassword" name="password" type="password" autocomplete="current-password" required /></div>
+                <div class="btns"><button id="loginBtn" class="btn primary" type="submit">Sign In</button></div>
+              </form>
+              <div id="loginMsg" class="msg" aria-live="polite"></div>
+              <p class="sub" style="margin-top:16px;margin-bottom:0">Need an account? <a href="/register" data-link="/register">Create one</a></p>
+            </div>
+            <div id="registerView" style="display:none">
+              <h3>Create account</h3>
+              <p class="sub">Join Chateazy and start messaging in seconds.</p>
+              <form id="registerForm">
+                <div class="field"><label for="regUser">Username</label><input id="regUser" name="username" type="text" autocomplete="username" minlength="3" required /></div>
+                <div class="field"><label for="regEmail">Email</label><input id="regEmail" name="email" type="email" autocomplete="email" required /></div>
+                <div class="field"><label for="regPass">Password</label><input id="regPass" name="password" type="password" autocomplete="new-password" minlength="6" required /></div>
+                <div class="btns"><button id="registerBtn" class="btn primary" type="submit">Create Account</button></div>
+              </form>
+              <div id="registerMsg" class="msg" aria-live="polite"></div>
+              <p class="sub" style="margin-top:16px;margin-bottom:0">Already registered? <a href="/login" data-link="/login">Sign in</a></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="chat" class="screen">
+      <div class="chat">
+        <aside id="sidebar" class="side">
+          <div class="me">
+            <p class="eyebrow">Your Space</p>
+            <div class="mebox"><strong id="meName">Signed out</strong><span id="meEmail">Log in to start chatting</span></div>
+          </div>
+          <div class="users">
+            <p class="eyebrow" style="margin:0">Users</p>
+            <div id="userList" style="display:grid;gap:10px"></div>
+          </div>
+        </aside>
+        <div class="mainchat">
+          <div class="head">
+            <div><strong id="chatTitle">Choose a conversation</strong><span id="chatSub">Pick an online user to start chatting.</span></div>
+            <div class="acts">
+              <button id="toggleUsers" class="btn ghost toggle" type="button">Users</button>
+              <button id="deleteBtn" class="btn danger" type="button">Delete Chat</button>
+              <button id="logoutBtn" class="btn ghost" type="button">Logout</button>
+            </div>
+          </div>
+          <div id="messages" class="msgs"><div class="empty">Select a user from the list to begin chatting.</div></div>
+          <form id="messageForm" class="compose">
+            <input id="messageInput" type="text" maxlength="500" placeholder="Type a message..." required />
+            <button id="sendBtn" class="btn primary" type="submit">Send</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" crossorigin="anonymous"></script>
+  <script>
+    const BACKEND_URL = window.CHATEAZY_BACKEND_URL || (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+      ? "http://localhost:3001"
+      : "https://backendchat-nu8b.onrender.com");
+    const SOCKET_URL = BACKEND_URL;
+    const buildApiUrl = (path) => `${BACKEND_URL}${path}`;
+    const $=id=>document.getElementById(id),state={user:null,token:localStorage.getItem("token")||"",users:[],active:null,ids:new Set(),timer:null,pending:0}; let socket=null;
+    let backendWarmupPromise=null;
+    const auth=$("auth"),chat=$("chat"),loginView=$("loginView"),registerView=$("registerView"),loginForm=$("loginForm"),registerForm=$("registerForm"),loginBtn=$("loginBtn"),registerBtn=$("registerBtn"),loginMsg=$("loginMsg"),registerMsg=$("registerMsg"),statusEl=$("status"),meName=$("meName"),meEmail=$("meEmail"),userList=$("userList"),chatTitle=$("chatTitle"),chatSub=$("chatSub"),messages=$("messages"),messageForm=$("messageForm"),messageInput=$("messageInput"),sendBtn=$("sendBtn"),deleteBtn=$("deleteBtn"),logoutBtn=$("logoutBtn"),sidebar=$("sidebar"),toggleUsers=$("toggleUsers"),overlay=$("overlay");
+    const gid=v=>!v?"":typeof v==="string"?v:v._id?gid(v._id):typeof v.toString==="function"?v.toString():"";
+    const setStatus=t=>statusEl.textContent=t;
+    const setMsg=(el,text,type)=>{el.textContent=text||"";el.className=text?`msg ${type}`:"msg"};
+    const setLoading=(btn,on,busy,idle)=>{btn.disabled=on;btn.textContent=on?busy:idle};
+    const empty=t=>messages.innerHTML=`<div class="empty">${t}</div>`;
+    const clearEmpty=()=>{const el=messages.querySelector(".empty");if(el)el.remove()};
+    const readUser=()=>{try{return JSON.parse(localStorage.getItem("user")||"null")}catch{return null}};
+    const show=(screen)=>{auth.classList.toggle("on",screen==="auth");chat.classList.toggle("on",screen==="chat")};
+    const authMode=path=>{const reg=path==="/register";loginView.style.display=reg?"none":"block";registerView.style.display=reg?"block":"none";show("auth");setStatus(reg?"Create your account":"Sign in to continue")};
+    const closeSide=()=>{sidebar.classList.remove("open");overlay.classList.remove("on")}; const openSide=()=>{sidebar.classList.add("open");overlay.classList.add("on")};
+    const readResponseBody=async(response)=>{const text=await response.text(); if(!text) return {}; try{return JSON.parse(text)}catch{return {message:text}}};
+    const api=async(path,options={})=>{
+      const controller=new AbortController();
+      const timeoutId=setTimeout(()=>controller.abort(),30000);
+      try{
+        const response=await fetch(buildApiUrl(path),{...options,mode:"cors",signal:controller.signal});
+        const data=await readResponseBody(response);
+        if(!response.ok){
+          const detail=data.message||`${response.status} ${response.statusText}`||"Request failed";
+          const error=new Error(detail);
+          error.status=response.status;
+          throw error;
+        }
+        return data;
+      }catch(error){
+        if(error.name==="AbortError"){
+          throw new Error("The backend took too long to respond. Render may still be waking up, so please try again in a few seconds.");
+        }
+        if(error instanceof TypeError){
+          throw new Error(`Cannot reach the backend at ${BACKEND_URL}. Check Netlify deploy, Render deploy, and CORS settings.`);
+        }
+        throw error;
+      }finally{
+        clearTimeout(timeoutId);
+      }
+    };
+    async function warmupBackend(force=false){
+      if(!force&&backendWarmupPromise)return backendWarmupPromise;
+      backendWarmupPromise=(async()=>{
+        setStatus("Connecting to backend...");
+        const data=await api("/");
+        setStatus(data.message||"Backend connected");
+        return data;
+      })().catch(error=>{
+        setStatus("Backend unavailable");
+        throw error;
+      });
+      return backendWarmupPromise;
+    }
+    function renderHeader(){if(!state.active){chatTitle.textContent="Choose a conversation";chatSub.textContent="Pick a user to start chatting.";return} chatTitle.textContent=`Chat with ${state.active.username}`;chatSub.textContent=state.active.isLoggedIn?"Online now":"Offline"}
+    function renderUsers(){if(!state.user){userList.innerHTML="";return} const mine=gid(state.user.id),others=state.users.filter(u=>gid(u._id)!==mine); if(!others.length){userList.innerHTML='<div class="empty" style="margin:0">No other users are available yet.</div>';return}
+      userList.innerHTML=others.map(u=>`<button class="user${state.active&&gid(state.active._id)===gid(u._id)?" active":""}" type="button" data-id="${gid(u._id)}"><div class="userline"><span class="dot ${u.isLoggedIn?"online":"offline"}"></span><strong>${u.username}</strong></div><span>${u.isLoggedIn?"Online":"Offline"}${u.email?` • ${u.email}`:""}</span></button>`).join("");
+      userList.querySelectorAll("[data-id]").forEach(btn=>btn.addEventListener("click",async()=>{state.active=others.find(u=>gid(u._id)===btn.dataset.id)||null; renderUsers(); renderHeader(); closeSide(); await loadMessages()}))
+    }
+    function append(msg){const id=msg&&msg._id?gid(msg._id):""; if(id&&state.ids.has(id))return; if(id)state.ids.add(id); const mine=state.user&&gid(msg.sender&&msg.sender._id)===gid(state.user.id); const box=document.createElement("div"); box.className=`bubble ${mine?"me":"other"}${msg.pending?" pending":""}`; if(msg.localId)box.dataset.localId=msg.localId;
+      const who=msg.sender&&msg.sender.username?msg.sender.username:"Unknown"; const time=new Date(msg.createdAt||Date.now()).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+      box.innerHTML=`<div class="meta"><span>${who}</span><span>${time}</span>${msg.pending?"<span>Sending...</span>":""}</div><div>${msg.text}</div>`; messages.appendChild(box); messages.scrollTop=messages.scrollHeight}
+    function renderMessages(list){messages.innerHTML=""; state.ids.clear(); if(!state.active){empty("Select a user from the list to begin chatting.");return} if(!list.length){empty("No messages yet. Say hello to start the conversation.");return} list.forEach(append)}
+    const removePending=id=>{const el=messages.querySelector(`[data-local-id="${id}"]`); if(el)el.remove()};
+    async function loadMessages(){if(!state.user||!state.active){renderMessages([]);return} const p=new URLSearchParams({userId:gid(state.user.id),chatWith:gid(state.active._id)}); const d=await api(`/api/chat/messages?${p.toString()}`); renderMessages(d.messages||[])}
+    async function loadUsers(){const d=await api("/api/chat/online-users"); state.users=d.users||[]; if(state.active)state.active=state.users.find(u=>gid(u._id)===gid(state.active._id))||null; if(!state.active&&state.user){const mine=gid(state.user.id); state.active=state.users.find(u=>gid(u._id)!==mine)||null} renderUsers(); renderHeader(); if(state.active)await loadMessages(); else renderMessages([])}
+    function connect(){if(!state.user||socket)return; socket=io(SOCKET_URL,{transports:["websocket","polling"]}); socket.on("connect",()=>{socket.emit("user:join",{userId:gid(state.user.id)}); setStatus("Connected to live chat")}); socket.on("disconnect",()=>setStatus("Reconnecting to live chat"));
+      socket.on("message:new",payload=>{const msg=payload&&payload.message;if(!msg||!state.active)return; const me=gid(state.user.id),peer=gid(state.active._id),s=gid(msg.sender&&msg.sender._id),r=gid(msg.receiver&&msg.receiver._id); if((s===me&&r===peer)||(s===peer&&r===me)){clearEmpty(); append(msg)}});
+      socket.on("conversation:cleared",payload=>{if(!payload||!state.user||!state.active)return; const me=gid(state.user.id),peer=gid(state.active._id),a=gid(payload.userId),b=gid(payload.chatWith); if((a===me&&b===peer)||(a===peer&&b===me)){renderMessages([])}})
+    }
+    function disconnect(){if(socket){socket.disconnect();socket=null}}
+    function stopLoop(){if(state.timer){clearInterval(state.timer);state.timer=null}}
+    function startLoop(){stopLoop();state.timer=setInterval(()=>loadUsers().catch(()=>{}),5000)}
+    function clearSession(){state.token="";state.user=null;state.users=[];state.active=null;localStorage.removeItem("token");localStorage.removeItem("user");disconnect();stopLoop(); renderUsers(); renderMessages([])}
+    function hydrate(){state.user=readUser(); state.token=localStorage.getItem("token")||""; if(state.user&&state.token){meName.textContent=state.user.username||"Unknown user"; meEmail.textContent=state.user.email||""; connect(); startLoop()}}
+    async function onLogin(e){e.preventDefault(); setMsg(loginMsg,"",""); setLoading(loginBtn,true,"Signing In...","Sign In"); try{await warmupBackend(); const f=new FormData(loginForm),payload={login:String(f.get("login")||"").trim(),password:String(f.get("password")||"")}; if(!payload.login||!payload.password)throw new Error("Please fill in all login fields."); const d=await api("/api/users/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+      localStorage.setItem("token",d.token); localStorage.setItem("user",JSON.stringify(d.user)); state.user=d.user; state.token=d.token; meName.textContent=d.user.username||"Unknown user"; meEmail.textContent=d.user.email||""; setMsg(loginMsg,"Login successful. Opening chat...","ok"); connect(); startLoop(); go("/chat"); await loadUsers()}catch(err){setMsg(loginMsg,err.message||"Login failed","bad")}finally{setLoading(loginBtn,false,"Signing In...","Sign In")}}
+    async function onRegister(e){e.preventDefault(); setMsg(registerMsg,"",""); setLoading(registerBtn,true,"Creating...","Create Account"); try{await warmupBackend(); const f=new FormData(registerForm),payload={username:String(f.get("username")||"").trim(),email:String(f.get("email")||"").trim(),password:String(f.get("password")||"")}; if(!payload.username||!payload.email||!payload.password)throw new Error("Please fill in all registration fields."); await api("/api/users/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}); registerForm.reset(); setMsg(registerMsg,"Account created. You can sign in now.","ok"); go("/login")}catch(err){setMsg(registerMsg,err.message||"Registration failed","bad")}finally{setLoading(registerBtn,false,"Creating...","Create Account")}}
+    async function onSend(e){e.preventDefault(); if(!state.user||!state.active){alert("Please select a user first.");return} const text=messageInput.value.trim(); if(!text)return; const localId=`pending-${Date.now()}-${++state.pending}`; messageInput.value=""; clearEmpty(); append({localId,pending:true,text,createdAt:Date.now(),sender:{_id:gid(state.user.id),username:state.user.username}}); sendBtn.disabled=true;
+      const fallback=()=>api("/api/chat/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({senderId:gid(state.user.id),receiverId:gid(state.active._id),text})}).then(d=>d.data);
+      try{const sent=await new Promise((resolve,reject)=>{if(!socket){fallback().then(resolve).catch(reject);return} socket.emit("message:send",{senderId:gid(state.user.id),receiverId:gid(state.active._id),text},async response=>{if(response&&response.ok&&response.message){resolve(response.message);return} try{resolve(await fallback())}catch(err){reject(err)}})});
+        removePending(localId); append(sent); messageInput.focus()}catch(err){removePending(localId); messageInput.value=text; messageInput.focus(); alert(err.message||"Message send failed.")}finally{sendBtn.disabled=false}}
+    async function onDelete(){if(!state.user||!state.active){alert("Please select a user first.");return} if(!confirm(`Delete your conversation with ${state.active.username}? This removes those messages from the database.`))return; try{const params=new URLSearchParams({userId:gid(state.user.id),chatWith:gid(state.active._id)}); await api(`/api/chat/messages?${params.toString()}`,{method:"DELETE"}); renderMessages([])}catch(err){alert(err.message||"Could not delete messages.")}}
+    async function onLogout(){const id=state.user?gid(state.user.id):""; try{if(id)await api("/api/users/logout",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId:id})})}catch{} finally{clearSession(); meName.textContent="Signed out"; meEmail.textContent="Log in to start chatting"; go("/login"); loginForm.reset(); registerForm.reset(); closeSide()}}
+    function route(){let path=location.pathname; if(path==="/"||path==="/index.html")path=state.user&&state.token?"/chat":"/login"; if(path==="/login.html")path="/login"; if(path==="/register.html")path="/register"; if(path==="/chatdashboard.html")path="/chat"; if(path==="/chat"&&!(state.user&&state.token))path="/login";
+      if(path==="/chat"){show("chat"); setStatus("Loading chat..."); renderHeader(); loadUsers().then(()=>setStatus("Chateazy is live")).catch(err=>{renderMessages([]); setStatus(err.message||"Could not load chat")}); return} authMode(path==="/register"?"/register":"/login")}
+    function go(path){if(location.pathname!==path)history.pushState({}, "", path); route()}
+    document.querySelectorAll("[data-link]").forEach(a=>a.addEventListener("click",e=>{e.preventDefault(); go(a.dataset.link)}));
+    loginForm.addEventListener("submit",onLogin); registerForm.addEventListener("submit",onRegister); messageForm.addEventListener("submit",onSend); deleteBtn.addEventListener("click",onDelete); logoutBtn.addEventListener("click",onLogout); toggleUsers.addEventListener("click",openSide); overlay.addEventListener("click",closeSide); addEventListener("popstate",route); addEventListener("beforeunload",()=>{disconnect(); stopLoop()});
+    hydrate(); warmupBackend().catch(()=>{}); route();
+  </script>
+</body>
+</html>
