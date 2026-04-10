@@ -130,10 +130,10 @@
       scrollbar-width:thin;
       scrollbar-color:var(--scroll-thumb) var(--scroll-track);
     }
-    .scrollable::-webkit-scrollbar{width:6px}
-    .scrollable::-webkit-scrollbar-track{background:var(--scroll-track);border-radius:3px}
-    .scrollable::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border-radius:3px}
-    .scrollable::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+   .users-scroll::-webkit-scrollbar{width:6px}
+.users-scroll::-webkit-scrollbar-track{background:var(--scroll-track);border-radius:3px}
+.users-scroll::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border-radius:3px}
+.users-scroll::-webkit-scrollbar-thumb:hover{background:var(--accent)}
 
     /* ── Auth Screen ── */
     .auth{
@@ -263,10 +263,13 @@
       display:flex;flex-direction:column;
     }
     .users-label{flex-shrink:0;padding:14px 16px 8px}
-    .users-scroll{
-      flex:1;min-height:0;padding:0 16px 16px;
-      display:grid;gap:9px;align-content:start;
-    }
+  .users-scroll{
+  flex:1;min-height:0;padding:0 16px 16px;
+  overflow-y:auto;overflow-x:hidden;
+  display:flex;flex-direction:column;gap:9px;
+  scrollbar-width:thin;
+  scrollbar-color:var(--scroll-thumb) var(--scroll-track);
+}
     .user{
       width:100%;text-align:left;padding:12px 14px;
       border-radius:14px;border:1px solid var(--line);
