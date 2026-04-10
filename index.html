@@ -772,6 +772,29 @@
     const empty = t => messages.innerHTML = `<div class="empty">${t}</div>`;
     const clearEmpty = () => { const el = messages.querySelector(".empty"); if (el) el.remove(); };
     const readUser = () => { try { return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; } };
+    const getChatStateStorageKey = () => {
+      const user = state.user || readUser();
+      const userId = gid(user && user.id);
+      return userId ? `chateazy-chat-state-${userId}` : "chateazy-chat-state";
+    };
+    const persistChatState = () => {
+      try {
+        const payload = {
+          activity: Object.fromEntries(state.activity),
+          latestMessage: Object.fromEntries(state.latestMessage)
+        };
+        localStorage.setItem(getChatStateStorageKey(), JSON.stringify(payload));
+      } catch {}
+    };
+    const restoreChatState = () => {
+      try {
+        const raw = localStorage.getItem(getChatStateStorageKey());
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        state.activity = new Map(Object.entries(parsed.activity || {}).map(([key, value]) => [key, Number(value) || 0]));
+        state.latestMessage = new Map(Object.entries(parsed.latestMessage || {}).map(([key, value]) => [key, String(value || "")]));
+      } catch {}
+    };
     const show = screen => { auth.classList.toggle("on", screen === "auth"); chat.classList.toggle("on", screen === "chat"); };
     const closeSide = () => { sidebar.classList.remove("open"); overlay.classList.remove("on"); };
     const openSide = () => { sidebar.classList.add("open"); overlay.classList.add("on"); };
@@ -779,6 +802,7 @@
       const id = gid(userId);
       if (!id) return;
       state.activity.set(id, new Date(when).getTime() || Date.now());
+      persistChatState();
     };
     const getUnread = userId => state.unread.get(gid(userId)) || 0;
     const updateDocumentTitle = () => {
@@ -937,6 +961,7 @@
       stampActivity(peerId, msg.createdAt || Date.now());
       if (peerId && msg.text) {
         state.latestMessage.set(peerId, String(msg.text).trim());
+        persistChatState();
       }
     };
 
@@ -1201,9 +1226,11 @@
 
     /* ── Session ── */
     function clearSession() {
+      const chatStateKey = getChatStateStorageKey();
       state.token = ""; state.user = null; state.users = []; state.active = null;
       state.unread.clear(); state.activity.clear(); state.latestMessage.clear();
       localStorage.removeItem("token"); localStorage.removeItem("user");
+      localStorage.removeItem(chatStateKey);
       disconnect(); stopLoop(); stopIncomingSound();
       updateDocumentTitle();
       renderUsers(); renderMessages([]);
@@ -1213,6 +1240,7 @@
       state.user = readUser();
       state.token = localStorage.getItem("token") || "";
       if (state.user && state.token) {
+        restoreChatState();
         meName.textContent = state.user.username || "Unknown user";
         meEmail.textContent = state.user.email || "";
         connect(); startLoop();
