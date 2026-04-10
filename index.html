@@ -297,11 +297,12 @@
     .userline strong{margin-bottom:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .user-meta{display:flex;align-items:center;gap:8px}
     .badge{
-      min-width:20px;height:20px;padding:0 6px;
+      padding:5px 9px;
       border-radius:999px;border:1px solid rgba(239,68,68,.18);
       background:#ef4444;color:#fff;
       display:inline-flex;align-items:center;justify-content:center;
-      font-size:.72rem;font-weight:800;line-height:1;
+      font-size:.72rem;font-weight:800;line-height:1.1;
+      white-space:nowrap;
       box-shadow:0 6px 16px rgba(239,68,68,.22);
     }
     .dot{width:9px;height:9px;border-radius:50%;flex:none}
@@ -770,6 +771,9 @@
     };
     const notifyIncomingMessage = (username, text) => {
       showIncomingAlert(username, text);
+      if ("vibrate" in navigator) {
+        try { navigator.vibrate([300, 150, 300, 150, 300]); } catch {}
+      }
       if ("Notification" in window) {
         if (Notification.permission === "granted") {
           new Notification(`New message from ${username}`, {
@@ -965,7 +969,7 @@
       }
       userList.innerHTML = others.map(u =>
         `<button class="user${state.active && gid(state.active._id) === gid(u._id) ? " active" : ""}" type="button" data-id="${gid(u._id)}">
-          <div class="userline"><span class="dot ${u.isLoggedIn ? "online" : "offline"}"></span><strong>${u.username}</strong>${getUnread(u._id) ? `<span class="badge">${Math.min(getUnread(u._id), 99)}</span>` : ""}</div>
+          <div class="userline"><span class="dot ${u.isLoggedIn ? "online" : "offline"}"></span><strong>${u.username}</strong>${getUnread(u._id) ? `<span class="badge">${getUnread(u._id) > 99 ? "99+ messages" : `${getUnread(u._id)} message${getUnread(u._id) === 1 ? "" : "s"}`}</span>` : ""}</div>
           <span>${u.isLoggedIn ? "Online" : "Offline"}${u.email ? ` · ${u.email}` : ""}</span>
         </button>`
       ).join("");
