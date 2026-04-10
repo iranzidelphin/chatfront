@@ -295,6 +295,12 @@
     .user span{font-size:.8rem;color:var(--muted)}
     .userline{display:flex;align-items:center;gap:9px}
     .userline strong{margin-bottom:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .user-preview{
+      display:block;margin-top:6px;
+      color:#f97316;font-size:.82rem;font-weight:800;
+      line-height:1.35;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
     .user-meta{display:flex;align-items:center;gap:8px}
     .badge{
       padding:5px 9px;
@@ -729,6 +735,7 @@
       ids: new Set(),
       unread: new Map(),
       activity: new Map(),
+      latestMessage: new Map(),
       timer: null,
       pending: 0
     };
@@ -854,6 +861,9 @@
       const receiverId = gid(msg.receiver && msg.receiver._id);
       const peerId = senderId === me ? receiverId : senderId;
       stampActivity(peerId, msg.createdAt || Date.now());
+      if (peerId && msg.text) {
+        state.latestMessage.set(peerId, String(msg.text).trim());
+      }
     };
 
     const authMode = path => {
@@ -972,6 +982,10 @@
     function renderUsers() {
       if (!state.user) { userList.innerHTML = ""; return; }
       const mine = gid(state.user.id);
+      const previewText = userId => {
+        const text = state.latestMessage.get(gid(userId)) || "";
+        return text || "No messages yet";
+      };
       const others = state.users
         .filter(u => gid(u._id) !== mine)
         .sort((a, b) => {
@@ -988,7 +1002,7 @@
       userList.innerHTML = others.map(u =>
         `<button class="user${state.active && gid(state.active._id) === gid(u._id) ? " active" : ""}" type="button" data-id="${gid(u._id)}">
           <div class="userline"><span class="dot ${u.isLoggedIn ? "online" : "offline"}"></span><strong>${u.username}</strong>${getUnread(u._id) ? `<span class="badge">(${getUnread(u._id) > 99 ? "99+ messages" : `${getUnread(u._id)} message${getUnread(u._id) === 1 ? "" : "s"}`})</span>` : ""}</div>
-          <span>${u.isLoggedIn ? "Online" : "Offline"}${u.email ? ` · ${u.email}` : ""}</span>
+          <span class="user-preview">${previewText(u._id)}</span>
         </button>`
       ).join("");
 
@@ -1102,7 +1116,7 @@
     /* ── Session ── */
     function clearSession() {
       state.token = ""; state.user = null; state.users = []; state.active = null;
-      state.unread.clear(); state.activity.clear();
+      state.unread.clear(); state.activity.clear(); state.latestMessage.clear();
       localStorage.removeItem("token"); localStorage.removeItem("user");
       disconnect(); stopLoop(); stopIncomingSound();
       updateDocumentTitle();
