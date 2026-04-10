@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chateazy</title>
+  <meta name="theme-color" content="#22c55e" />
+  <link rel="manifest" href="/manifest.json" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2322c55e'/><text y='.9em' x='50%' text-anchor='middle' font-size='70' font-family='sans-serif' font-weight='800' fill='%23ffffff'>C</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -745,6 +747,8 @@
     const defaultTitle = document.title;
     let audioContext = null;
     let soundTimer = null;
+    let swRegistration = null;
+    const PUSH_PUBLIC_KEY = window.CHATEAZY_VAPID_PUBLIC_KEY || "";
 
     /* ── DOM Refs ── */
     const auth = $("auth"), chat = $("chat"), loginView = $("loginView"), registerView = $("registerView");
@@ -794,25 +798,86 @@
       toastAlert.classList.add("on");
       toastTimer = setTimeout(() => toastAlert.classList.remove("on"), 4200);
     };
-    const notifyIncomingMessage = (username, text) => {
+    const getNotificationOptions = (username, text) => ({
+      body: text,
+      tag: `msg-${username}`,
+      renotify: true,
+      requireInteraction: true,
+      silent: false,
+      vibrate: [300, 150, 300, 150, 300],
+      data: {
+        url: "/#/chat",
+        sender: username,
+        text
+      }
+    });
+    const urlBase64ToUint8Array = base64String => {
+      const padding = "=".repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+      const rawData = atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; i += 1) outputArray[i] = rawData.charCodeAt(i);
+      return outputArray;
+    };
+    const registerServiceWorker = async () => {
+      if (!("serviceWorker" in navigator)) return null;
+      try {
+        swRegistration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+        return swRegistration;
+      } catch {
+        return null;
+      }
+    };
+    const subscribeToPush = async () => {
+      if (!swRegistration || !PUSH_PUBLIC_KEY || !("PushManager" in window)) return null;
+      try {
+        const existing = await swRegistration.pushManager.getSubscription();
+        if (existing) return existing;
+        return await swRegistration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(PUSH_PUBLIC_KEY)
+        });
+      } catch {
+        return null;
+      }
+    };
+    const requestNotificationPermission = async () => {
+      if (!("Notification" in window)) return "unsupported";
+      if (Notification.permission === "granted") {
+        await registerServiceWorker();
+        await subscribeToPush();
+        return "granted";
+      }
+      if (Notification.permission === "denied") return "denied";
+      try {
+        const result = await Notification.requestPermission();
+        if (result === "granted") {
+          await registerServiceWorker();
+          await subscribeToPush();
+        }
+        return result;
+      } catch {
+        return "default";
+      }
+    };
+    const notifyIncomingMessage = async (username, text) => {
       showIncomingAlert(username, text);
       if ("vibrate" in navigator) {
         try { navigator.vibrate([300, 150, 300, 150, 300]); } catch {}
       }
-      if ("Notification" in window) {
-        if (Notification.permission === "granted") {
-          new Notification(`New message from ${username}`, {
-            body: text,
-            tag: `msg-${username}`,
-            renotify: true,
-            requireInteraction: true,
-            silent: false,
-            vibrate: [300, 150, 300, 150, 300]
-          });
-        } else if (Notification.permission === "default") {
-          Notification.requestPermission().catch(() => {});
+      const permission = await requestNotificationPermission();
+      if (permission !== "granted") return;
+      const title = `New message from ${username}`;
+      const options = getNotificationOptions(username, text);
+      try {
+        const registration = swRegistration || await navigator.serviceWorker.getRegistration();
+        if (registration) {
+          swRegistration = registration;
+          await registration.showNotification(title, options);
+          return;
         }
-      }
+      } catch {}
+      try { new Notification(title, options); } catch {}
     };
     const ensureAudioContext = async () => {
       if (!("AudioContext" in window || "webkitAudioContext" in window)) return null;
@@ -908,10 +973,14 @@
         input.type = input.type === "password" ? "text" : "password";
         btn.setAttribute("aria-label", input.type === "password" ? "Show password" : "Hide password");
         await ensureAudioContext().catch(() => {});
+        await requestNotificationPermission().catch(() => {});
       });
     });
     ["click", "keydown", "touchstart"].forEach(eventName => {
-      addEventListener(eventName, () => { ensureAudioContext().catch(() => {}); }, { once: true, passive: true });
+      addEventListener(eventName, () => {
+        ensureAudioContext().catch(() => {});
+        requestNotificationPermission().catch(() => {});
+      }, { once: true, passive: true });
     });
 
     /* ── Search ── */
@@ -1294,6 +1363,7 @@
     if (!location.hash && ["/login", "/register", "/chat", "/login.html", "/register.html", "/chatdashboard.html"].includes(location.pathname)) {
       history.replaceState({}, "", `/#${readRoute()}`);
     }
+    registerServiceWorker().catch(() => {});
     warmupBackend().catch(() => { });
     route();
   </script>
