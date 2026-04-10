@@ -1052,7 +1052,6 @@
       if (!state.user || !state.active) { renderMessages([]); return; }
       const p = new URLSearchParams({ userId: gid(state.user.id), chatWith: gid(state.active._id) });
       const d = await api(`/api/chat/messages?${p.toString()}`);
-      clearUnread(state.active._id);
       const list = d.messages || [];
       const last = list[list.length - 1];
       if (last) touchMessageActivity(last);
@@ -1091,7 +1090,7 @@
         touchMessageActivity(msg);
         const peer = s === me ? r : s;
         const activePeer = state.active ? gid(state.active._id) : "";
-        if (s !== me && peer !== activePeer) {
+        if (s !== me) {
           state.unread.set(peer, getUnread(peer) + 1);
           const senderName = msg.sender && msg.sender.username ? msg.sender.username : "Someone";
           notifyIncomingMessage(senderName, msg.text || "Sent you a message");
