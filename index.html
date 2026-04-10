@@ -751,11 +751,7 @@
         return data;
       } catch (error) {
         if (error.name === "AbortError") throw new Error("The backend took too long to respond. Render may still be waking up — please try again in a few seconds.");
-<<<<<<< HEAD
         if (error instanceof TypeError) throw new Error(`Cannot reach the backend at ${BACKEND_URL}. Check Vercel deploy, Render deploy, and CORS settings.`);
-=======
-        if (error instanceof TypeError) throw new Error(`Cannot reach the backend at ${BACKEND_URL}. Check Netlify deploy, Render deploy, and CORS settings.`);
->>>>>>> a947cfe54f3151aa9cbabe521db897569b9c6012
         throw error;
       } finally { clearTimeout(timeoutId); }
     };
@@ -767,7 +763,11 @@
         const data = await api("/");
         setStatus(data.message || "Backend connected");
         return data;
-      })().catch(() => { setStatus("Backend unavailable"); throw new Error("Backend unavailable"); });
+      })().catch((error) => {
+        backendWarmupPromise = null;
+        setStatus("Backend unavailable");
+        throw error;
+      });
       return backendWarmupPromise;
     }
 
