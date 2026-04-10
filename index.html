@@ -559,7 +559,7 @@
                 <div class="btns"><button id="loginBtn" class="btn primary" type="submit">Sign In</button></div>
               </form>
               <div id="loginMsg" class="msg" aria-live="polite"></div>
-              <p class="sub" style="margin-top:14px;margin-bottom:0">Need an account? <a href="/register" data-link="/register">Create one</a></p>
+              <p class="sub" style="margin-top:14px;margin-bottom:0">Need an account? <a href="#/register" data-link="/register">Create one</a></p>
             </div>
             <div id="registerView" style="display:none">
               <h3>Create account</h3>
@@ -571,7 +571,7 @@
                 <div class="btns"><button id="registerBtn" class="btn primary" type="submit">Create Account</button></div>
               </form>
               <div id="registerMsg" class="msg" aria-live="polite"></div>
-              <p class="sub" style="margin-top:14px;margin-bottom:0">Already registered? <a href="/login" data-link="/login">Sign in</a></p>
+              <p class="sub" style="margin-top:14px;margin-bottom:0">Already registered? <a href="#/login" data-link="/login">Sign in</a></p>
             </div>
           </div>
         </div>
@@ -689,6 +689,15 @@
       registerView.style.display = reg ? "block" : "none";
       show("auth");
       setStatus(reg ? "Create your account" : "Sign in to continue");
+    };
+
+    const readRoute = () => {
+      if (location.hash && location.hash.startsWith("#/")) {
+        return location.hash.slice(1);
+      }
+
+      const path = location.pathname || "/";
+      return path === "/index.html" ? "/" : path;
     };
 
     /* ── Theme (Light is default) ── */
@@ -1010,7 +1019,7 @@
 
     /* ── Routing ── */
     function route() {
-      let path = location.pathname;
+      let path = readRoute();
       if (path === "/" || path === "/index.html") path = state.user && state.token ? "/chat" : "/login";
       if (path === "/login.html") path = "/login";
       if (path === "/register.html") path = "/register";
@@ -1030,7 +1039,11 @@
     }
 
     function go(path) {
-      if (location.pathname !== path) history.pushState({}, "", path);
+      const nextHash = `#${path}`;
+      if (location.hash !== nextHash) {
+        location.hash = nextHash;
+        return;
+      }
       route();
     }
 
@@ -1045,11 +1058,14 @@
     logoutBtn.addEventListener("click", onLogout);
     toggleUsers.addEventListener("click", openSide);
     overlay.addEventListener("click", closeSide);
-    addEventListener("popstate", route);
+    addEventListener("hashchange", route);
     addEventListener("beforeunload", () => { disconnect(); stopLoop(); });
 
     /* ── Boot ── */
     hydrate();
+    if (!location.hash && ["/login", "/register", "/chat", "/login.html", "/register.html", "/chatdashboard.html"].includes(location.pathname)) {
+      history.replaceState({}, "", `/#${readRoute()}`);
+    }
     warmupBackend().catch(() => { });
     route();
   </script>
