@@ -798,7 +798,8 @@
       toastAlert.classList.add("on");
       toastTimer = setTimeout(() => toastAlert.classList.remove("on"), 4200);
     };
-    const getNotificationOptions = (username, text) => ({
+    const getTargetChatPath = peerId => peerId ? `/chat?peer=${encodeURIComponent(peerId)}` : "/chat";
+    const getNotificationOptions = (username, text, peerId) => ({
       body: text,
       tag: `msg-${username}`,
       renotify: true,
@@ -806,7 +807,8 @@
       silent: false,
       vibrate: [300, 150, 300, 150, 300],
       data: {
-        url: "/#/chat",
+        url: `/#${getTargetChatPath(peerId)}`,
+        peerId: peerId || "",
         sender: username,
         text
       }
@@ -860,7 +862,7 @@
         return "default";
       }
     };
-    const notifyIncomingMessage = async (username, text) => {
+    const notifyIncomingMessage = async (username, text, peerId) => {
       showIncomingAlert(username, text);
       if ("vibrate" in navigator) {
         try { navigator.vibrate([300, 150, 300, 150, 300]); } catch {}
@@ -868,7 +870,7 @@
       const permission = await requestNotificationPermission();
       if (permission !== "granted") return;
       const title = `New message from ${username}`;
-      const options = getNotificationOptions(username, text);
+      const options = getNotificationOptions(username, text, peerId);
       try {
         const registration = swRegistration || await navigator.serviceWorker.getRegistration();
         if (registration) {
@@ -877,7 +879,14 @@
           return;
         }
       } catch {}
-      try { new Notification(title, options); } catch {}
+      try {
+        const notification = new Notification(title, options);
+        notification.onclick = () => {
+          window.focus();
+          location.hash = `#${getTargetChatPath(peerId)}`;
+          notification.close();
+        };
+      } catch {}
     };
     const ensureAudioContext = async () => {
       if (!("AudioContext" in window || "webkitAudioContext" in window)) return null;
@@ -941,11 +950,16 @@
 
     const readRoute = () => {
       if (location.hash && location.hash.startsWith("#/")) {
-        return location.hash.slice(1);
+        return location.hash.slice(1).split("?")[0];
       }
 
       const path = location.pathname || "/";
       return path === "/index.html" ? "/" : path;
+    };
+    const readRouteParams = () => {
+      if (!(location.hash && location.hash.startsWith("#/"))) return new URLSearchParams();
+      const [, query = ""] = location.hash.slice(1).split("?");
+      return new URLSearchParams(query);
     };
 
     /* ── Theme (Light is default) ── */
@@ -1130,7 +1144,11 @@
     async function loadUsers() {
       const d = await api("/api/chat/online-users");
       state.users = d.users || [];
+      const targetPeer = readRouteParams().get("peer");
       if (state.active) state.active = state.users.find(u => gid(u._id) === gid(state.active._id)) || null;
+      if (targetPeer) {
+        state.active = state.users.find(u => gid(u._id) === gid(targetPeer)) || state.active;
+      }
       if (!state.active && state.user) {
         const mine = gid(state.user.id);
         state.active = state.users.find(u => gid(u._id) !== mine) || null;
@@ -1162,7 +1180,7 @@
         if (s !== me) {
           state.unread.set(peer, getUnread(peer) + 1);
           const senderName = msg.sender && msg.sender.username ? msg.sender.username : "Someone";
-          notifyIncomingMessage(senderName, msg.text || "Sent you a message");
+          notifyIncomingMessage(senderName, msg.text || "Sent you a message", peer);
           playIncomingSound().catch(() => {});
         }
         renderUsers();

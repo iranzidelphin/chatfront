@@ -15,6 +15,7 @@ self.addEventListener("push", event => {
   }
 
   const title = payload.title || `New message from ${payload.sender || "Chateazy"}`;
+  const targetUrl = payload.url || (payload.peerId ? `/#/chat?peer=${encodeURIComponent(payload.peerId)}` : "/#/chat");
   const options = {
     body: payload.body || payload.text || "You have a new message.",
     tag: payload.tag || `msg-${payload.sender || "chat"}`,
@@ -23,8 +24,9 @@ self.addEventListener("push", event => {
     silent: false,
     vibrate: payload.vibrate || [300, 150, 300, 150, 300],
     data: {
-      url: payload.url || "/#/chat",
-      sender: payload.sender || "Chateazy"
+      url: targetUrl,
+      sender: payload.sender || "Chateazy",
+      peerId: payload.peerId || ""
     }
   };
 
