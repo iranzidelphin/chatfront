@@ -284,9 +284,32 @@
     .user strong{display:block;margin-bottom:3px;font-size:.9rem}
     .user span{font-size:.8rem;color:var(--muted)}
     .userline{display:flex;align-items:center;gap:9px}
+    .userline strong{margin-bottom:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .user-meta{display:flex;align-items:center;gap:8px}
+    .badge{
+      min-width:20px;height:20px;padding:0 6px;
+      border-radius:999px;border:1px solid rgba(239,68,68,.18);
+      background:#ef4444;color:#fff;
+      display:inline-flex;align-items:center;justify-content:center;
+      font-size:.72rem;font-weight:800;line-height:1;
+      box-shadow:0 6px 16px rgba(239,68,68,.22);
+    }
     .dot{width:9px;height:9px;border-radius:50%;flex:none}
     .dot.online{background:var(--ok);box-shadow:0 0 0 3px rgba(34,197,94,.15)}
     .dot.offline{background:var(--bad);box-shadow:0 0 0 3px rgba(239,68,68,.12)}
+    .toast-alert{
+      position:fixed;right:18px;top:18px;z-index:30;
+      max-width:min(360px,calc(100vw - 36px));
+      padding:14px 16px;border-radius:16px;
+      border:1px solid rgba(239,68,68,.22);
+      background:linear-gradient(160deg,rgba(127,29,29,.98),rgba(239,68,68,.96));
+      color:#fff;box-shadow:0 22px 50px rgba(127,29,29,.28);
+      transform:translateY(-16px);opacity:0;pointer-events:none;
+      transition:opacity .22s ease,transform .22s ease;
+    }
+    .toast-alert.on{transform:translateY(0);opacity:1}
+    .toast-alert strong{display:block;font-size:.92rem;margin-bottom:3px}
+    .toast-alert span{display:block;font-size:.82rem;line-height:1.45;opacity:.96}
 
     /* Main chat area */
     .mainchat{
@@ -515,6 +538,7 @@
 </head>
 <body>
   <div id="overlay" class="overlay"></div>
+  <div id="toastAlert" class="toast-alert" aria-live="polite"></div>
   <div class="app">
     <!-- Fixed Header -->
     <header class="top">
@@ -652,11 +676,15 @@
       users: [],
       active: null,
       ids: new Set(),
+      unread: new Map(),
+      activity: new Map(),
       timer: null,
       pending: 0
     };
     let socket = null;
     let backendWarmupPromise = null;
+    let toastTimer = null;
+    const defaultTitle = document.title;
 
     /* ── DOM Refs ── */
     const auth = $("auth"), chat = $("chat"), loginView = $("loginView"), registerView = $("registerView");
@@ -671,6 +699,7 @@
     const deleteBtn = $("deleteBtn"), logoutBtn = $("logoutBtn");
     const sidebar = $("sidebar"), toggleUsers = $("toggleUsers"), overlay = $("overlay");
     const themeToggle = $("themeToggle");
+    const toastAlert = $("toastAlert");
 
     /* ── UI Helpers ── */
     const setStatus = t => statusEl.textContent = t;
@@ -682,6 +711,47 @@
     const show = screen => { auth.classList.toggle("on", screen === "auth"); chat.classList.toggle("on", screen === "chat"); };
     const closeSide = () => { sidebar.classList.remove("open"); overlay.classList.remove("on"); };
     const openSide = () => { sidebar.classList.add("open"); overlay.classList.add("on"); };
+    const stampActivity = (userId, when = Date.now()) => {
+      const id = gid(userId);
+      if (!id) return;
+      state.activity.set(id, new Date(when).getTime() || Date.now());
+    };
+    const getUnread = userId => state.unread.get(gid(userId)) || 0;
+    const updateDocumentTitle = () => {
+      const totalUnread = [...state.unread.values()].reduce((sum, count) => sum + count, 0);
+      document.title = totalUnread > 0 ? `(${totalUnread}) ${defaultTitle}` : defaultTitle;
+    };
+    const clearUnread = userId => {
+      const id = gid(userId);
+      if (!id) return;
+      state.unread.delete(id);
+      updateDocumentTitle();
+    };
+    const showIncomingAlert = (username, text) => {
+      if (!toastAlert) return;
+      clearTimeout(toastTimer);
+      toastAlert.innerHTML = `<strong>New message from ${username}</strong><span>${text}</span>`;
+      toastAlert.classList.add("on");
+      toastTimer = setTimeout(() => toastAlert.classList.remove("on"), 4200);
+    };
+    const notifyIncomingMessage = (username, text) => {
+      showIncomingAlert(username, text);
+      if ("Notification" in window) {
+        if (Notification.permission === "granted") {
+          new Notification(`New message from ${username}`, { body: text, tag: `msg-${username}` });
+        } else if (Notification.permission === "default") {
+          Notification.requestPermission().catch(() => {});
+        }
+      }
+    };
+    const touchMessageActivity = msg => {
+      if (!msg || !state.user) return;
+      const me = gid(state.user.id);
+      const senderId = gid(msg.sender && msg.sender._id);
+      const receiverId = gid(msg.receiver && msg.receiver._id);
+      const peerId = senderId === me ? receiverId : senderId;
+      stampActivity(peerId, msg.createdAt || Date.now());
+    };
 
     const authMode = path => {
       const reg = path === "/register";
@@ -787,14 +857,22 @@
     function renderUsers() {
       if (!state.user) { userList.innerHTML = ""; return; }
       const mine = gid(state.user.id);
-      const others = state.users.filter(u => gid(u._id) !== mine);
+      const others = state.users
+        .filter(u => gid(u._id) !== mine)
+        .sort((a, b) => {
+          const unreadDiff = getUnread(b._id) - getUnread(a._id);
+          if (unreadDiff !== 0) return unreadDiff;
+          const activityDiff = (state.activity.get(gid(b._id)) || 0) - (state.activity.get(gid(a._id)) || 0);
+          if (activityDiff !== 0) return activityDiff;
+          return String(a.username || "").localeCompare(String(b.username || ""));
+        });
       if (!others.length) {
         userList.innerHTML = '<div class="empty" style="margin:0">No other users are available yet.</div>';
         return;
       }
       userList.innerHTML = others.map(u =>
         `<button class="user${state.active && gid(state.active._id) === gid(u._id) ? " active" : ""}" type="button" data-id="${gid(u._id)}">
-          <div class="userline"><span class="dot ${u.isLoggedIn ? "online" : "offline"}"></span><strong>${u.username}</strong></div>
+          <div class="userline"><span class="dot ${u.isLoggedIn ? "online" : "offline"}"></span><strong>${u.username}</strong>${getUnread(u._id) ? `<span class="badge">${Math.min(getUnread(u._id), 99)}</span>` : ""}</div>
           <span>${u.isLoggedIn ? "Online" : "Offline"}${u.email ? ` · ${u.email}` : ""}</span>
         </button>`
       ).join("");
@@ -802,6 +880,7 @@
       userList.querySelectorAll("[data-id]").forEach(btn =>
         btn.addEventListener("click", async () => {
           state.active = others.find(u => gid(u._id) === btn.dataset.id) || null;
+          if (state.active) clearUnread(state.active._id);
           renderUsers();
           renderHeader();
           closeSide();
@@ -816,6 +895,7 @@
       const id = msg && msg._id ? gid(msg._id) : "";
       if (id && state.ids.has(id)) return;
       if (id) state.ids.add(id);
+      touchMessageActivity(msg);
       const mine = state.user && gid(msg.sender && msg.sender._id) === gid(state.user.id);
       const box = document.createElement("div");
       box.className = `bubble ${mine ? "me" : "other"}${msg.pending ? " pending" : ""}`;
@@ -842,7 +922,11 @@
       if (!state.user || !state.active) { renderMessages([]); return; }
       const p = new URLSearchParams({ userId: gid(state.user.id), chatWith: gid(state.active._id) });
       const d = await api(`/api/chat/messages?${p.toString()}`);
-      renderMessages(d.messages || []);
+      clearUnread(state.active._id);
+      const list = d.messages || [];
+      const last = list[list.length - 1];
+      if (last) touchMessageActivity(last);
+      renderMessages(list);
     }
 
     async function loadUsers() {
@@ -870,10 +954,21 @@
       socket.on("disconnect", () => setStatus("Reconnecting to live chat"));
       socket.on("message:new", payload => {
         const msg = payload && payload.message;
-        if (!msg || !state.active) return;
-        const me = gid(state.user.id), peer = gid(state.active._id);
+        if (!msg || !state.user) return;
+        const me = gid(state.user.id);
         const s = gid(msg.sender && msg.sender._id), r = gid(msg.receiver && msg.receiver._id);
-        if ((s === me && r === peer) || (s === peer && r === me)) { clearEmpty(); append(msg); }
+        if (s !== me && r !== me) return;
+        touchMessageActivity(msg);
+        const peer = s === me ? r : s;
+        const activePeer = state.active ? gid(state.active._id) : "";
+        if (s !== me && peer !== activePeer) {
+          state.unread.set(peer, getUnread(peer) + 1);
+          const senderName = msg.sender && msg.sender.username ? msg.sender.username : "Someone";
+          notifyIncomingMessage(senderName, msg.text || "Sent you a message");
+        }
+        renderUsers();
+        updateDocumentTitle();
+        if (peer === activePeer) { clearEmpty(); append(msg); }
       });
       socket.on("conversation:cleared", payload => {
         if (!payload || !state.user || !state.active) return;
@@ -890,8 +985,10 @@
     /* ── Session ── */
     function clearSession() {
       state.token = ""; state.user = null; state.users = []; state.active = null;
+      state.unread.clear(); state.activity.clear();
       localStorage.removeItem("token"); localStorage.removeItem("user");
       disconnect(); stopLoop();
+      updateDocumentTitle();
       renderUsers(); renderMessages([]);
     }
 
@@ -984,6 +1081,7 @@
         });
         removePending(localId);
         append(sent);
+        renderUsers();
         messageInput.focus();
       } catch (err) {
         removePending(localId);
