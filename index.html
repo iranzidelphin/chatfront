@@ -197,6 +197,16 @@
       box-shadow:0 0 0 4px var(--input-focus);
     }
     .field input::placeholder,.search-input::placeholder{color:var(--muted)}
+    .password-wrap{position:relative}
+    .password-wrap input{padding-right:48px}
+    .password-toggle{
+      position:absolute;right:10px;top:50%;transform:translateY(-50%);
+      width:34px;height:34px;border-radius:10px;border:1px solid transparent;
+      background:transparent;color:var(--muted);cursor:pointer;
+      display:grid;place-items:center;transition:all .2s ease;
+    }
+    .password-toggle:hover{background:var(--accent-glow);color:var(--text);border-color:var(--line)}
+    .password-toggle svg{width:18px;height:18px}
 
     .btn{
       border:0;border-radius:13px;padding:13px 18px;
@@ -579,7 +589,18 @@
               <p class="sub">Sign in to open your Chateazy workspace.</p>
               <form id="loginForm">
                 <div class="field"><label for="loginInput">Username or Email</label><input id="loginInput" name="login" type="text" autocomplete="username" required /></div>
-                <div class="field"><label for="loginPassword">Password</label><input id="loginPassword" name="password" type="password" autocomplete="current-password" required /></div>
+                <div class="field">
+                  <label for="loginPassword">Password</label>
+                  <div class="password-wrap">
+                    <input id="loginPassword" name="password" type="password" autocomplete="current-password" required />
+                    <button class="password-toggle" type="button" data-toggle-password="loginPassword" aria-label="Show password">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
                 <div class="btns"><button id="loginBtn" class="btn primary" type="submit">Sign In</button></div>
               </form>
               <div id="loginMsg" class="msg" aria-live="polite"></div>
@@ -591,7 +612,18 @@
               <form id="registerForm">
                 <div class="field"><label for="regUser">Username</label><input id="regUser" name="username" type="text" autocomplete="username" minlength="3" required /></div>
                 <div class="field"><label for="regEmail">Email</label><input id="regEmail" name="email" type="email" autocomplete="email" required /></div>
-                <div class="field"><label for="regPass">Password</label><input id="regPass" name="password" type="password" autocomplete="new-password" minlength="6" required /></div>
+                <div class="field">
+                  <label for="regPass">Password</label>
+                  <div class="password-wrap">
+                    <input id="regPass" name="password" type="password" autocomplete="new-password" minlength="6" required />
+                    <button class="password-toggle" type="button" data-toggle-password="regPass" aria-label="Show password">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
                 <div class="btns"><button id="registerBtn" class="btn primary" type="submit">Create Account</button></div>
               </form>
               <div id="registerMsg" class="msg" aria-live="polite"></div>
@@ -685,6 +717,8 @@
     let backendWarmupPromise = null;
     let toastTimer = null;
     const defaultTitle = document.title;
+    let audioContext = null;
+    let soundTimer = null;
 
     /* ── DOM Refs ── */
     const auth = $("auth"), chat = $("chat"), loginView = $("loginView"), registerView = $("registerView");
@@ -738,11 +772,58 @@
       showIncomingAlert(username, text);
       if ("Notification" in window) {
         if (Notification.permission === "granted") {
-          new Notification(`New message from ${username}`, { body: text, tag: `msg-${username}` });
+          new Notification(`New message from ${username}`, {
+            body: text,
+            tag: `msg-${username}`,
+            renotify: true,
+            requireInteraction: true,
+            silent: false,
+            vibrate: [300, 150, 300, 150, 300]
+          });
         } else if (Notification.permission === "default") {
           Notification.requestPermission().catch(() => {});
         }
       }
+    };
+    const ensureAudioContext = async () => {
+      if (!("AudioContext" in window || "webkitAudioContext" in window)) return null;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!audioContext) audioContext = new AudioCtx();
+      if (audioContext.state === "suspended") {
+        try { await audioContext.resume(); } catch { return null; }
+      }
+      return audioContext;
+    };
+    const playPing = async () => {
+      const ctx = await ensureAudioContext();
+      if (!ctx) return;
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(880, ctx.currentTime);
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+      oscillator.connect(gain);
+      gain.connect(ctx.destination);
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.36);
+    };
+    const stopIncomingSound = () => {
+      if (soundTimer) {
+        clearInterval(soundTimer);
+        soundTimer = null;
+      }
+    };
+    const playIncomingSound = async () => {
+      stopIncomingSound();
+      await playPing();
+      let ticks = 1;
+      soundTimer = setInterval(() => {
+        ticks += 1;
+        playPing();
+        if (ticks >= 10) stopIncomingSound();
+      }, 1000);
     };
     const touchMessageActivity = msg => {
       if (!msg || !state.user) return;
@@ -787,6 +868,18 @@
     themeToggle.addEventListener("click", () => {
       const current = document.documentElement.getAttribute("data-theme");
       setTheme(current === "dark" ? "light" : "dark");
+    });
+    document.querySelectorAll("[data-toggle-password]").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const input = document.getElementById(btn.dataset.togglePassword);
+        if (!input) return;
+        input.type = input.type === "password" ? "text" : "password";
+        btn.setAttribute("aria-label", input.type === "password" ? "Show password" : "Hide password");
+        await ensureAudioContext().catch(() => {});
+      });
+    });
+    ["click", "keydown", "touchstart"].forEach(eventName => {
+      addEventListener(eventName, () => { ensureAudioContext().catch(() => {}); }, { once: true, passive: true });
     });
 
     /* ── Search ── */
@@ -881,6 +974,7 @@
         btn.addEventListener("click", async () => {
           state.active = others.find(u => gid(u._id) === btn.dataset.id) || null;
           if (state.active) clearUnread(state.active._id);
+          stopIncomingSound();
           renderUsers();
           renderHeader();
           closeSide();
@@ -965,6 +1059,7 @@
           state.unread.set(peer, getUnread(peer) + 1);
           const senderName = msg.sender && msg.sender.username ? msg.sender.username : "Someone";
           notifyIncomingMessage(senderName, msg.text || "Sent you a message");
+          playIncomingSound().catch(() => {});
         }
         renderUsers();
         updateDocumentTitle();
@@ -987,7 +1082,7 @@
       state.token = ""; state.user = null; state.users = []; state.active = null;
       state.unread.clear(); state.activity.clear();
       localStorage.removeItem("token"); localStorage.removeItem("user");
-      disconnect(); stopLoop();
+      disconnect(); stopLoop(); stopIncomingSound();
       updateDocumentTitle();
       renderUsers(); renderMessages([]);
     }
