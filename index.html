@@ -1,68 +1,551 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chateazy</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23ffb24d'/><text y='.9em' x='50%' text-anchor='middle' font-size='70' font-family='sans-serif' font-weight='800' fill='%232d1400'>C</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2322c55e'/><text y='.9em' x='50%' text-anchor='middle' font-size='70' font-family='sans-serif' font-weight='800' fill='%23ffffff'>C</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
   <style>
-    :root{--bg:#09131c;--panel:rgba(9,18,27,.86);--line:rgba(255,255,255,.08);--text:#eef6ff;--muted:#97aabd;--accent:#ffb24d;--accent2:#ff8f47;--ok:#65d7a0;--bad:#ff8585;--bubble:#ffffff10}
-    *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:"Manrope",sans-serif;background:radial-gradient(circle at top left,rgba(255,178,77,.18),transparent 30%),radial-gradient(circle at bottom right,rgba(87,177,255,.16),transparent 28%),linear-gradient(180deg,#081018,#09131c);color:var(--text)}
-    body{padding:20px}button,input{font:inherit}a{color:#ffd69b;text-decoration:none}
-    .app{min-height:calc(100vh - 40px);max-width:1200px;margin:0 auto;border:1px solid var(--line);border-radius:28px;overflow:hidden;background:linear-gradient(180deg,rgba(13,24,35,.96),rgba(7,16,24,.92));box-shadow:0 28px 80px rgba(0,0,0,.35)}
-    .top{padding:22px 26px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;align-items:center;background:#ffffff05}
-    .brand{display:flex;align-items:center;gap:14px}.logo{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font:800 1.2rem "Syne",sans-serif;color:#2d1400;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 14px 30px rgba(255,143,71,.22)}
-    .brand h1{margin:0;font:800 1.5rem "Syne",sans-serif;letter-spacing:-.05em}.brand p{margin:3px 0 0;color:var(--muted);font-size:.94rem}.status{padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:#ffffff05;color:var(--muted);font-size:.88rem}
-    .screen{display:none}.screen.on{display:block}
-    .auth{display:grid;grid-template-columns:1.05fr .95fr;min-height:calc(100vh - 125px)}.hero{padding:42px;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(255,178,77,.08),transparent 45%),#ffffff03;display:flex;flex-direction:column;justify-content:space-between;gap:30px}
-    .tag{display:inline-block;padding:8px 12px;border-radius:999px;background:rgba(255,178,77,.14);color:#ffd9a8;font-size:.82rem;font-weight:700}.hero h2{margin:18px 0 14px;max-width:8ch;font:800 clamp(2.2rem,5vw,4rem) "Syne",sans-serif;line-height:.95;letter-spacing:-.07em}.hero p{max-width:45ch;margin:0;color:#c2d1de;line-height:1.7}
-    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.tile{padding:16px;border-radius:18px;border:1px solid var(--line);background:#ffffff05}.tile strong{display:block;margin-bottom:6px}.tile span{color:var(--muted);font-size:.92rem;line-height:1.55}
-    .pane{display:flex;align-items:center;justify-content:center;padding:32px}.card{width:min(430px,100%);padding:30px;border-radius:24px;border:1px solid var(--line);background:var(--panel)}
-    .card h3{margin:0 0 8px;font-size:1.85rem;letter-spacing:-.04em}.card .sub{margin:0 0 22px;color:var(--muted);line-height:1.6}
-    .field{margin-bottom:14px}.field label{display:block;margin-bottom:8px;font-weight:700;font-size:.86rem;color:#bfd0de}.field input{width:100%;padding:14px 15px;border-radius:14px;border:1px solid var(--line);outline:none;background:#ffffff08;color:var(--text)}.field input:focus{border-color:#ffb24daa;box-shadow:0 0 0 4px rgba(255,178,77,.14)}
-    .btns{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}.btn{border:0;border-radius:14px;padding:14px 18px;font-weight:800;cursor:pointer}.primary{flex:1;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#2a1100}.ghost{background:#ffffff08;color:var(--text);border:1px solid var(--line)}.danger{background:rgba(255,133,133,.12);color:#ffc7c7;border:1px solid rgba(255,133,133,.18)}.msg{min-height:22px;margin-top:12px;font-weight:700;font-size:.92rem}.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
-    .chat{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 125px)}.side{border-right:1px solid var(--line);background:#ffffff03;display:flex;flex-direction:column;min-height:0}.me{padding:22px;border-bottom:1px solid var(--line)}.eyebrow{margin:0 0 8px;color:var(--muted);font-size:.77rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
-    .mebox{padding:16px;border-radius:18px;border:1px solid var(--line);background:linear-gradient(160deg,rgba(255,178,77,.1),#ffffff04)}.mebox strong{display:block}.mebox span{color:var(--muted);font-size:.9rem}
-    .users{padding:16px;overflow:auto;display:grid;gap:10px}.user{width:100%;text-align:left;padding:14px 15px;border-radius:18px;border:1px solid var(--line);background:#ffffff05;color:var(--text);cursor:pointer}.user:hover,.user.active{border-color:rgba(255,178,77,.34);background:rgba(255,178,77,.11)}.user strong{display:block;margin-bottom:4px}.user span{font-size:.84rem;color:var(--muted)}
-    .userline{display:flex;align-items:center;gap:10px}.dot{width:10px;height:10px;border-radius:50%;flex:none;box-shadow:0 0 0 3px rgba(255,255,255,.04)}.dot.online{background:var(--ok);box-shadow:0 0 0 3px rgba(101,215,160,.14)}.dot.offline{background:var(--bad);box-shadow:0 0 0 3px rgba(255,133,133,.14)}
-    .mainchat{display:flex;flex-direction:column;min-height:0}.head{padding:20px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;background:#ffffff03}.head strong{display:block}.head span{color:var(--muted);font-size:.9rem}.acts{display:flex;gap:10px;flex-wrap:wrap}
-    .msgs{flex:1;overflow:auto;padding:20px 22px;display:flex;flex-direction:column;gap:12px;background:radial-gradient(circle at top,rgba(255,178,77,.06),transparent 28%)}.empty{margin:auto;max-width:30ch;text-align:center;color:var(--muted);line-height:1.7}
-    .bubble{max-width:min(72%,520px);padding:12px 14px;border-radius:18px;line-height:1.5;box-shadow:0 8px 20px rgba(0,0,0,.12)}.bubble.me{align-self:flex-end;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#2b1200;border-bottom-right-radius:6px}.bubble.other{align-self:flex-start;background:var(--bubble);border:1px solid var(--line);border-bottom-left-radius:6px}.bubble.pending{opacity:.74}.meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:5px;font-size:.74rem;font-weight:700;opacity:.72}
-    .compose{padding:18px 22px 22px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr auto;gap:12px;background:#ffffff03}.compose input{width:100%;padding:14px 15px;border-radius:16px;border:1px solid var(--line);outline:none;background:#ffffff08;color:var(--text)}.compose input:focus{border-color:#ffb24daa;box-shadow:0 0 0 4px rgba(255,178,77,.14)}
-    .toggle{display:none}.overlay{display:none}
-    @media (max-width:980px){body{padding:12px}.app{min-height:calc(100vh - 24px)}.auth{grid-template-columns:1fr}.hero{border-right:0;border-bottom:1px solid var(--line);padding:24px}.chat{grid-template-columns:1fr}.side{position:fixed;top:0;left:0;bottom:0;width:min(320px,86vw);z-index:10;transform:translateX(-102%);transition:transform .22s ease;background:rgba(9,18,27,.98);box-shadow:0 24px 70px rgba(0,0,0,.38)}.side.open{transform:translateX(0)}.toggle{display:inline-flex}.overlay{display:block;position:fixed;inset:0;background:rgba(0,0,0,.48);opacity:0;pointer-events:none;transition:opacity .22s ease;z-index:9}.overlay.on{opacity:1;pointer-events:auto}}
-    @media (max-width:640px){.top{padding:18px}.status{display:none}.pane,.card,.head,.msgs,.compose{padding-left:16px;padding-right:16px}.card{padding:22px}.grid{grid-template-columns:1fr}.compose{grid-template-columns:1fr}.bubble{max-width:88%}}
+          /* ── Theme Variables ── */
+    :root,[data-theme="dark"]{
+      --body-bg:radial-gradient(circle at top left,rgba(34,197,94,.1),transparent 32%),radial-gradient(circle at bottom right,rgba(34,197,94,.06),transparent 30%),linear-gradient(180deg,#050505,#0a0a0a);
+      --app-bg:#0a0a0a;--app-bg2:rgba(10,10,10,.97);
+      --panel:rgba(17,17,17,.94);--surface:#111;--surface2:#181818;
+      --line:rgba(255,255,255,.06);--line-hover:rgba(255,255,255,.13);
+      --text:#e8eaed;--text2:#c4c9d0;--muted:#6b7280;
+      --accent:#22c55e;--accent-dark:#16a34a;
+      --accent-glow:rgba(34,197,94,.14);--accent-glow2:rgba(34,197,94,.06);
+      --bubble-other:rgba(255,255,255,.055);--bubble-other-border:rgba(255,255,255,.06);
+      --input-bg:rgba(255,255,255,.045);--input-focus:rgba(34,197,94,.18);
+      --tag-bg:rgba(34,197,94,.11);--tag-text:#86efac;
+      --mebox-bg:linear-gradient(160deg,rgba(34,197,94,.09),rgba(255,255,255,.015));
+      --head-bg:rgba(255,255,255,.02);--tile-bg:rgba(255,255,255,.025);
+      --ok:#22c55e;--bad:#ef4444;
+      --danger-bg:rgba(239,68,68,.09);--danger-text:#fca5a5;--danger-border:rgba(239,68,68,.14);
+      --overlay-bg:rgba(0,0,0,.55);
+      --scroll-thumb:rgba(34,197,94,.28);--scroll-track:transparent;
+      --shadow:0 28px 80px rgba(0,0,0,.4);
+      --hero-subtle:linear-gradient(180deg,rgba(34,197,94,.06),transparent 50%),rgba(255,255,255,.015);
+      --msg-glow:radial-gradient(circle at top,rgba(34,197,94,.05),transparent 30%);
+    }
+    [data-theme="light"]{
+      --body-bg:radial-gradient(circle at top left,rgba(34,197,94,.07),transparent 32%),radial-gradient(circle at bottom right,rgba(34,197,94,.04),transparent 30%),#f0fdf4;
+      --app-bg:#ffffff;--app-bg2:rgba(255,255,255,.99);
+      --panel:#f8faf8;--surface:#f1f5f9;--surface2:#e2e8f0;
+      --line:#e5e7eb;--line-hover:#d1d5db;
+      --text:#111827;--text2:#374151;--muted:#6b7280;
+      --accent:#22c55e;--accent-dark:#16a34a;
+      --accent-glow:rgba(34,197,94,.09);--accent-glow2:rgba(34,197,94,.04);
+      --bubble-other:#f1f5f9;--bubble-other-border:#e5e7eb;
+      --input-bg:#f8faf8;--input-focus:rgba(34,197,94,.14);
+      --tag-bg:rgba(34,197,94,.09);--tag-text:#166534;
+      --mebox-bg:linear-gradient(160deg,rgba(34,197,94,.07),rgba(34,197,94,.015));
+      --head-bg:#f8faf8;--tile-bg:#f8faf8;
+      --ok:#16a34a;--bad:#dc2626;
+      --danger-bg:rgba(239,68,68,.07);--danger-text:#dc2626;--danger-border:rgba(239,68,68,.14);
+      --overlay-bg:rgba(0,0,0,.25);
+      --scroll-thumb:rgba(34,197,94,.3);--scroll-track:#f1f5f9;
+      --shadow:0 28px 80px rgba(0,0,0,.08);
+      --hero-subtle:linear-gradient(180deg,rgba(34,197,94,.05),transparent 50%),#ffffff;
+      --msg-glow:none;
+    }
+
+    /* ── Reset & Base ── */
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{height:100%}
+    body{
+      height:100%;overflow:hidden;
+      padding:20px;
+      font-family:"Manrope",sans-serif;
+      background:var(--body-bg);
+      color:var(--text);
+      transition:background .4s ease,color .3s ease;
+    }
+    button,input,textarea{font:inherit}
+    a{color:var(--accent);text-decoration:none;font-weight:700}
+    a:hover{text-decoration:underline}
+
+    /* ── App Shell ── */
+    .app{
+      display:flex;flex-direction:column;
+      height:calc(100vh - 40px);
+      max-width:1200px;margin:0 auto;
+      border:1px solid var(--line);
+      border-radius:28px;overflow:hidden;
+      background:var(--app-bg);
+      box-shadow:var(--shadow);
+      transition:background .4s ease,border-color .3s ease,box-shadow .4s ease;
+    }
+
+    /* ── Header ── */
+    .top{
+      flex-shrink:0;
+      padding:20px 24px;
+      border-bottom:1px solid var(--line);
+      display:flex;justify-content:space-between;align-items:center;gap:14px;
+      background:var(--head-bg);
+      transition:background .3s ease,border-color .3s ease;
+      z-index:5;
+    }
+    .brand{display:flex;align-items:center;gap:14px}
+    .logo{
+      width:48px;height:48px;border-radius:14px;
+      display:grid;place-items:center;
+      font:800 1.15rem "Syne",sans-serif;color:#fff;
+      background:linear-gradient(135deg,var(--accent),var(--accent-dark));
+      box-shadow:0 10px 24px var(--accent-glow);
+      flex-shrink:0;
+    }
+    .brand h1{font:800 1.4rem "Syne",sans-serif;letter-spacing:-.05em;line-height:1.1}
+    .brand p{color:var(--muted);font-size:.88rem;margin-top:2px;transition:color .3s ease}
+    .top-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}
+    .status{
+      padding:8px 14px;border-radius:999px;
+      border:1px solid var(--line);
+      background:var(--input-bg);
+      color:var(--muted);font-size:.84rem;font-weight:600;
+      transition:all .3s ease;white-space:nowrap;
+    }
+    .theme-btn{
+      width:40px;height:40px;border-radius:12px;
+      border:1px solid var(--line);background:var(--input-bg);
+      color:var(--text);cursor:pointer;
+      display:grid;place-items:center;
+      transition:all .2s ease;
+    }
+    .theme-btn:hover{border-color:var(--line-hover);background:var(--accent-glow)}
+    .theme-btn svg{width:18px;height:18px}
+
+    /* ── Screens ── */
+    .screen{display:none}
+    #auth.on{display:flex;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden}
+    #chat.on{display:flex;flex:1;min-height:0;overflow:hidden}
+
+    /* ── Scrollbar Styles ── */
+    .scrollable{
+      overflow-y:auto;overflow-x:hidden;
+      scrollbar-width:thin;
+      scrollbar-color:var(--scroll-thumb) var(--scroll-track);
+    }
+    .scrollable::-webkit-scrollbar{width:6px}
+    .scrollable::-webkit-scrollbar-track{background:var(--scroll-track);border-radius:3px}
+    .scrollable::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border-radius:3px}
+    .scrollable::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+
+    /* ── Auth Screen ── */
+    .auth{
+      display:grid;grid-template-columns:1.05fr .95fr;
+      min-height:100%;width:100%;
+      transition:background .3s ease;
+    }
+    .hero{
+      padding:40px;border-right:1px solid var(--line);
+      background:var(--hero-subtle);
+      display:flex;flex-direction:column;justify-content:space-between;gap:28px;
+      transition:background .4s ease,border-color .3s ease;
+    }
+    .tag{
+      display:inline-block;padding:7px 13px;border-radius:999px;
+      background:var(--tag-bg);color:var(--tag-text);
+      font-size:.8rem;font-weight:700;
+      transition:all .3s ease;
+    }
+    .hero h2{
+      margin:16px 0 12px;max-width:9ch;
+      font:800 clamp(2.1rem,4.5vw,3.6rem) "Syne",sans-serif;
+      line-height:.95;letter-spacing:-.06em;
+    }
+    .hero p{max-width:44ch;color:var(--text2);line-height:1.7;transition:color .3s ease}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .tile{
+      padding:15px;border-radius:16px;
+      border:1px solid var(--line);background:var(--tile-bg);
+      transition:all .3s ease;
+    }
+    .tile:hover{border-color:var(--line-hover)}
+    .tile strong{display:block;margin-bottom:5px;font-size:.92rem}
+    .tile span{color:var(--muted);font-size:.88rem;line-height:1.55}
+
+    .pane{
+      display:flex;align-items:center;justify-content:center;
+      padding:28px;
+      background:var(--panel);transition:background .3s ease;
+    }
+    .card{
+      width:min(420px,100%);padding:28px;border-radius:22px;
+      border:1px solid var(--line);background:var(--app-bg2);
+      box-shadow:var(--shadow);
+      transition:all .3s ease;
+    }
+    .card h3{margin:0 0 6px;font-size:1.75rem;letter-spacing:-.04em}
+    .card .sub{margin:0 0 20px;color:var(--muted);line-height:1.6;font-size:.93rem}
+
+    /* ── Form Elements ── */
+    .field{margin-bottom:13px}
+    .field label{display:block;margin-bottom:7px;font-weight:700;font-size:.84rem;color:var(--text2);transition:color .3s ease}
+    .field input,.search-input{
+      width:100%;padding:13px 14px;border-radius:13px;
+      border:1px solid var(--line);outline:none;
+      background:var(--input-bg);color:var(--text);
+      transition:all .25s ease;
+    }
+    .field input:focus,.search-input:focus{
+      border-color:var(--accent);
+      box-shadow:0 0 0 4px var(--input-focus);
+    }
+    .field input::placeholder,.search-input::placeholder{color:var(--muted)}
+
+    .btn{
+      border:0;border-radius:13px;padding:13px 18px;
+      font-weight:800;cursor:pointer;font-size:.9rem;
+      transition:all .2s ease;
+    }
+    .btn:active{transform:scale(.97)}
+    .primary{flex:1;background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;box-shadow:0 8px 20px var(--accent-glow)}
+    .primary:hover{box-shadow:0 12px 28px rgba(34,197,94,.25);filter:brightness(1.05)}
+    .primary:disabled{opacity:.5;cursor:not-allowed;filter:none}
+    .ghost{background:var(--input-bg);color:var(--text);border:1px solid var(--line)}
+    .ghost:hover{border-color:var(--line-hover);background:var(--accent-glow)}
+    .danger{background:var(--danger-bg);color:var(--danger-text);border:1px solid var(--danger-border)}
+    .danger:hover{filter:brightness(1.1)}
+
+    .btns{display:flex;gap:11px;flex-wrap:wrap;margin-top:6px}
+    .msg{min-height:20px;margin-top:11px;font-weight:700;font-size:.9rem}
+    .msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
+
+    /* ── Chat Screen ── */
+    .chat-layout{
+      display:grid;grid-template-columns:300px 1fr;
+      height:100%;width:100%;
+    }
+
+    /* Sidebar */
+    .side{
+      display:flex;flex-direction:column;
+      height:100%;min-height:0;
+      border-right:1px solid var(--line);
+      background:var(--panel);
+      transition:background .3s ease,border-color .3s ease;
+    }
+    .me{
+      flex-shrink:0;padding:20px;
+      border-bottom:1px solid var(--line);
+      transition:border-color .3s ease;
+    }
+    .eyebrow{margin:0 0 7px;color:var(--muted);font-size:.74rem;font-weight:800;letter-spacing:.11em;text-transform:uppercase}
+    .mebox{
+      padding:14px;border-radius:16px;
+      border:1px solid var(--line);
+      background:var(--mebox-bg);
+      transition:all .3s ease;
+    }
+    .mebox strong{display:block;font-size:.95rem}
+    .mebox span{color:var(--muted);font-size:.86rem}
+
+    /* Search */
+    .search-wrap{
+      flex-shrink:0;padding:14px 16px;
+      border-bottom:1px solid var(--line);
+      transition:border-color .3s ease;
+    }
+    .search-input{
+      padding:10px 12px 10px 36px;font-size:.86rem;border-radius:10px;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='M11 11l3.5 3.5'/%3E%3C/svg%3E");
+      background-repeat:no-repeat;background-position:11px center;
+    }
+
+    /* User list */
+    .users-wrap{
+      flex:1;min-height:0;overflow:hidden;
+      display:flex;flex-direction:column;
+    }
+    .users-label{flex-shrink:0;padding:14px 16px 8px}
+    .users-scroll{
+      flex:1;min-height:0;padding:0 16px 16px;
+      overflow-y:auto;overflow-x:hidden;
+      display:flex;flex-direction:column;gap:9px;
+      scrollbar-width:thin;
+      scrollbar-color:var(--scroll-thumb) var(--scroll-track);
+    }
+    .users-scroll::-webkit-scrollbar{width:6px}
+    .users-scroll::-webkit-scrollbar-track{background:var(--scroll-track);border-radius:3px}
+    .users-scroll::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border-radius:3px}
+    .users-scroll::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+    .user{
+      width:100%;text-align:left;padding:12px 14px;
+      border-radius:14px;border:1px solid var(--line);
+      background:var(--input-bg);color:var(--text);
+      cursor:pointer;transition:all .2s ease;
+    }
+    .user:hover,.user.active{border-color:rgba(34,197,94,.35);background:var(--accent-glow)}
+    .user strong{display:block;margin-bottom:3px;font-size:.9rem}
+    .user span{font-size:.8rem;color:var(--muted)}
+    .userline{display:flex;align-items:center;gap:9px}
+    .dot{width:9px;height:9px;border-radius:50%;flex:none}
+    .dot.online{background:var(--ok);box-shadow:0 0 0 3px rgba(34,197,94,.15)}
+    .dot.offline{background:var(--bad);box-shadow:0 0 0 3px rgba(239,68,68,.12)}
+
+    /* Main chat area */
+    .mainchat{
+      display:flex;flex-direction:column;
+      height:100%;min-height:0;
+    }
+    .head{
+      flex-shrink:0;padding:18px 22px;
+      border-bottom:1px solid var(--line);
+      display:flex;justify-content:space-between;gap:14px;
+      align-items:center;flex-wrap:wrap;
+      background:var(--head-bg);
+      transition:all .3s ease;
+    }
+    .head-info strong{display:block;font-size:1rem}
+    .head-info span{color:var(--muted);font-size:.86rem}
+    .acts{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:9px;
+      align-items:center;
+    }
+
+    /* Messages */
+    .msgs{
+      flex:1;min-height:0;
+      padding:20px 22px;
+      display:flex;flex-direction:column;gap:11px;
+      background:var(--msg-glow);
+      transition:background .3s ease;
+    }
+    .empty{margin:auto;max-width:30ch;text-align:center;color:var(--muted);line-height:1.7;font-size:.93rem}
+
+    .bubble{
+      max-width:min(72%,520px);padding:11px 14px;
+      border-radius:18px;line-height:1.55;
+      box-shadow:0 6px 16px rgba(0,0,0,.08);
+      transition:background .3s ease;
+    }
+    .bubble.me{
+      align-self:flex-end;
+      background:linear-gradient(135deg,var(--accent),var(--accent-dark));
+      color:#fff;border-bottom-right-radius:6px;
+    }
+    .bubble.other{
+      align-self:flex-start;
+      background:var(--bubble-other);
+      border:1px solid var(--bubble-other-border);
+      border-bottom-left-radius:6px;
+    }
+    .bubble.pending{opacity:.7}
+    .meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;font-size:.72rem;font-weight:700;opacity:.65}
+
+    /* ── Compose ── */
+    .compose{
+      flex-shrink:0;
+      padding:12px 18px 18px;
+      border-top:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      gap:10px;
+      background:var(--head-bg);
+      transition:all .3s ease;
+    }
+    .compose input{
+      flex:1;
+      padding:13px 20px;
+      border-radius:28px;
+      border:1px solid var(--line);
+      outline:none;
+      background:var(--input-bg);
+      color:var(--text);
+      font-size:.93rem;
+      transition:all .25s ease;
+    }
+    .compose input:focus{
+      border-color:var(--accent);
+      box-shadow:0 0 0 3px var(--input-focus);
+    }
+    .compose input::placeholder{color:var(--muted)}
+
+    .send-arrow{
+      width:46px;height:46px;
+      border-radius:50%;border:none;
+      background:linear-gradient(135deg,var(--accent),var(--accent-dark));
+      color:#fff;cursor:pointer;
+      display:grid;place-items:center;
+      flex-shrink:0;
+      transition:all .2s ease;
+      box-shadow:0 4px 14px var(--accent-glow);
+    }
+    .send-arrow:hover{
+      box-shadow:0 6px 22px rgba(34,197,94,.32);
+      filter:brightness(1.08);
+    }
+    .send-arrow:active{transform:scale(.92)}
+    .send-arrow:disabled{
+      opacity:.35;cursor:not-allowed;
+      filter:none;box-shadow:none;
+      transform:none;
+    }
+    .send-arrow svg{width:20px;height:20px;margin-left:2px}
+
+    /* Sidebar toggle & overlay */
+    .toggle{display:none}
+    .overlay{display:none}
+
+    /* ── Responsive ── */
+    @media(max-width:980px){
+      body{padding:10px}
+      .app{height:calc(100vh - 20px);border-radius:22px}
+      .hero{display:none}
+      .auth{grid-template-columns:1fr}
+      .pane{background:var(--app-bg)}
+      .chat-layout{grid-template-columns:1fr}
+      .side{
+        position:fixed;top:0;left:0;bottom:0;
+        width:min(320px,86vw);z-index:10;
+        transform:translateX(-102%);
+        transition:transform .25s cubic-bezier(.4,0,.2,1);
+        background:var(--panel);
+        box-shadow:0 24px 70px rgba(0,0,0,.35);
+        border-right:1px solid var(--line);
+      }
+      .side.open{transform:translateX(0)}
+      .toggle{display:inline-flex}
+      .overlay{
+        display:block;position:fixed;inset:0;
+        background:var(--overlay-bg);
+        opacity:0;pointer-events:none;
+        transition:opacity .25s ease;z-index:9;
+      }
+      .overlay.on{opacity:1;pointer-events:auto}
+      .head{
+        padding:14px 16px;
+        flex-wrap:nowrap;
+      }
+      .head-info{
+        flex:1;min-width:0;
+      }
+      .head-info strong{font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .head-info span{font-size:.78rem}
+      .acts{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:6px;
+        flex-shrink:0;
+      }
+      .acts .btn{
+        padding:9px 10px;
+        font-size:.76rem;
+        border-radius:10px;
+        white-space:nowrap;
+      }
+      .acts .danger{
+        padding:9px 10px;
+        font-size:.76rem;
+        border-radius:10px;
+      }
+      .status{display:none}
+      .compose{
+        padding:14px 14px 22px;
+        gap:12px;
+      }
+      .compose input{
+        padding:16px 22px;
+        font-size:1rem;
+        min-height:56px;
+        border-radius:30px;
+      }
+      .send-arrow{
+        width:56px;
+        height:56px;
+      }
+      .send-arrow svg{
+        width:24px;
+        height:24px;
+      }
+    }
+    @media(max-width:640px){
+      body{padding:6px}
+      .app{height:calc(100vh - 12px);border-radius:18px}
+      .top{padding:14px 16px}
+      .brand p{display:none}
+      .pane,.card{padding:18px}
+      .card h3{font-size:1.45rem}
+      .msgs{padding:16px 14px}
+      .compose{
+        padding:12px 10px 18px;
+        gap:10px;
+      }
+      .compose input{
+        padding:15px 18px;
+        font-size:.95rem;
+        min-height:52px;
+        border-radius:28px;
+      }
+      .send-arrow{
+        width:52px;
+        height:52px;
+      }
+      .send-arrow svg{
+        width:22px;
+        height:22px;
+      }
+      .bubble{max-width:88%}
+      .grid{grid-template-columns:1fr}
+      .hero h2{font-size:2rem}
+      .acts{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:6px;
+      }
+      .acts .btn,.acts .danger{
+        padding:8px 8px;
+        font-size:.72rem;
+        border-radius:8px;
+      }
+    }
+
+    /* ── Reduced Motion ── */
+    @media(prefers-reduced-motion:reduce){
+      *,*::before,*::after{transition-duration:0.01ms!important;animation-duration:0.01ms!important}
+    }
   </style>
 </head>
 <body>
   <div id="overlay" class="overlay"></div>
   <div class="app">
+    <!-- Fixed Header -->
     <header class="top">
       <div class="brand">
         <div class="logo">C</div>
         <div>
           <h1>Chateazy</h1>
-          <p>Single page chat app on your existing backend.</p>
+          <p>DEVELOPED BY  <strong> Denko dev & Lummy dev </strong> </p>
         </div>
       </div>
-      <div id="status" class="status">Ready</div>
+      <div class="top-actions">
+        <button id="themeToggle" class="theme-btn" type="button" aria-label="Toggle light and dark mode"></button>
+        <div id="status" class="status">Ready</div>
+      </div>
     </header>
+
+    <!-- Auth Screen -->
     <section id="auth" class="screen on">
       <div class="auth">
         <aside class="hero">
           <div>
             <div class="tag">Single Page Experience</div>
             <h2>One flow for login, register, and chat.</h2>
-            <p>Chateazy keeps every feature in one place while still talking to the same `/api/users`, `/api/chat`, and Socket.IO backend you already have.</p>
+            <p>Chateazy was developed by 2 developer <strong> Denko dev & Lummy dev </strong></p>
           </div>
           <div class="grid">
-            <div class="tile"><strong>Register fast</strong><span>Create a new account without leaving the page.</span></div>
-            <div class="tile"><strong>Login instantly</strong><span>Move from auth to chat with a route change, not a reload.</span></div>
-            <div class="tile"><strong>Real-time chat</strong><span>Uses the current `message:send` and `message:new` events.</span></div>
-            <div class="tile"><strong>Online users</strong><span>Still loads live users from your existing backend endpoint.</span></div>
+           <div class="tile"><strong>Welcome aboard</strong><span>We’re glad to have you here.</span></div>
+<div class="tile"><strong>Join the community</strong><span>Create your account and start connecting instantly.</span></div>
+<div class="tile"><strong>Stay in touch</strong><span>Chat in real time and share freely.</span></div>
+<div class="tile"><strong>Never alone</strong><span>See who’s online and ready to talk.</span></div>
+
           </div>
         </aside>
         <div class="pane">
@@ -76,7 +559,7 @@
                 <div class="btns"><button id="loginBtn" class="btn primary" type="submit">Sign In</button></div>
               </form>
               <div id="loginMsg" class="msg" aria-live="polite"></div>
-              <p class="sub" style="margin-top:16px;margin-bottom:0">Need an account? <a href="/register" data-link="/register">Create one</a></p>
+              <p class="sub" style="margin-top:14px;margin-bottom:0">Need an account? <a href="/register" data-link="/register">Create one</a></p>
             </div>
             <div id="registerView" style="display:none">
               <h3>Create account</h3>
@@ -88,137 +571,483 @@
                 <div class="btns"><button id="registerBtn" class="btn primary" type="submit">Create Account</button></div>
               </form>
               <div id="registerMsg" class="msg" aria-live="polite"></div>
-              <p class="sub" style="margin-top:16px;margin-bottom:0">Already registered? <a href="/login" data-link="/login">Sign in</a></p>
+              <p class="sub" style="margin-top:14px;margin-bottom:0">Already registered? <a href="/login" data-link="/login">Sign in</a></p>
             </div>
           </div>
         </div>
       </div>
     </section>
+
+    <!-- Chat Screen -->
     <section id="chat" class="screen">
-      <div class="chat">
+      <div class="chat-layout">
+        <!-- Sidebar -->
         <aside id="sidebar" class="side">
           <div class="me">
             <p class="eyebrow">Your Space</p>
-            <div class="mebox"><strong id="meName">Signed out</strong><span id="meEmail">Log in to start chatting</span></div>
+            <div class="mebox">
+              <strong id="meName">Signed out</strong>
+              <span id="meEmail">Log in to start chatting</span>
+            </div>
           </div>
-          <div class="users">
-            <p class="eyebrow" style="margin:0">Users</p>
-            <div id="userList" style="display:grid;gap:10px"></div>
+          <div class="search-wrap">
+            <input id="searchInput" class="search-input" type="text" placeholder="Search users..." aria-label="Search users" />
+          </div>
+          <div class="users-wrap">
+            <div class="users-label"><p class="eyebrow">Users</p></div>
+            <div id="userList" class="users-scroll scrollable"></div>
           </div>
         </aside>
+
+        <!-- Main Chat -->
         <div class="mainchat">
           <div class="head">
-            <div><strong id="chatTitle">Choose a conversation</strong><span id="chatSub">Pick an online user to start chatting.</span></div>
+            <div class="head-info">
+              <strong id="chatTitle">Choose a conversation</strong>
+              <span id="chatSub">Pick an online user to start chatting.</span>
+            </div>
             <div class="acts">
-              <button id="toggleUsers" class="btn ghost toggle" type="button">Users</button>
-              <button id="deleteBtn" class="btn danger" type="button">Delete Chat</button>
+          
+              <button id="toggleUsers" class="btn ghost toggle" type="button" aria-label="Open users panel">Users</button>
+            
+               <button id="deleteBtn" class="btn danger" type="button" style="display:none">Delete Chat</button> 
+
               <button id="logoutBtn" class="btn ghost" type="button">Logout</button>
             </div>
           </div>
-          <div id="messages" class="msgs"><div class="empty">Select a user from the list to begin chatting.</div></div>
+          <div id="messages" class="msgs scrollable">
+            <div class="empty">Select a user from the list to begin chatting.</div>
+          </div>
           <form id="messageForm" class="compose">
             <input id="messageInput" type="text" maxlength="500" placeholder="Type a message..." required />
-            <button id="sendBtn" class="btn primary" type="submit">Send</button>
+            <button id="sendBtn" class="send-arrow" type="submit" aria-label="Send message">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5.011 3.002L21 12.006 5.011 20.998 5 13.004 16.003 12.006 5 10.998Z" fill="white"/>
+              </svg>
+            </button>
           </form>
         </div>
       </div>
     </section>
   </div>
+
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" crossorigin="anonymous"></script>
   <script>
-    const BACKEND_URL = window.CHATEAZY_BACKEND_URL || (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-      ? "http://localhost:3001"
-      : "https://backendchat-nu8b.onrender.com");
-    const SOCKET_URL = BACKEND_URL;
-    const buildApiUrl = (path) => `${BACKEND_URL}${path}`;
-    const $=id=>document.getElementById(id),state={user:null,token:localStorage.getItem("token")||"",users:[],active:null,ids:new Set(),timer:null,pending:0}; let socket=null;
-    let backendWarmupPromise=null;
-    const auth=$("auth"),chat=$("chat"),loginView=$("loginView"),registerView=$("registerView"),loginForm=$("loginForm"),registerForm=$("registerForm"),loginBtn=$("loginBtn"),registerBtn=$("registerBtn"),loginMsg=$("loginMsg"),registerMsg=$("registerMsg"),statusEl=$("status"),meName=$("meName"),meEmail=$("meEmail"),userList=$("userList"),chatTitle=$("chatTitle"),chatSub=$("chatSub"),messages=$("messages"),messageForm=$("messageForm"),messageInput=$("messageInput"),sendBtn=$("sendBtn"),deleteBtn=$("deleteBtn"),logoutBtn=$("logoutBtn"),sidebar=$("sidebar"),toggleUsers=$("toggleUsers"),overlay=$("overlay");
-    const gid=v=>!v?"":typeof v==="string"?v:v._id?gid(v._id):typeof v.toString==="function"?v.toString():"";
-    const setStatus=t=>statusEl.textContent=t;
-    const setMsg=(el,text,type)=>{el.textContent=text||"";el.className=text?`msg ${type}`:"msg"};
-    const setLoading=(btn,on,busy,idle)=>{btn.disabled=on;btn.textContent=on?busy:idle};
-    const empty=t=>messages.innerHTML=`<div class="empty">${t}</div>`;
-    const clearEmpty=()=>{const el=messages.querySelector(".empty");if(el)el.remove()};
-    const readUser=()=>{try{return JSON.parse(localStorage.getItem("user")||"null")}catch{return null}};
-    const show=(screen)=>{auth.classList.toggle("on",screen==="auth");chat.classList.toggle("on",screen==="chat")};
-    const authMode=path=>{const reg=path==="/register";loginView.style.display=reg?"none":"block";registerView.style.display=reg?"block":"none";show("auth");setStatus(reg?"Create your account":"Sign in to continue")};
-    const closeSide=()=>{sidebar.classList.remove("open");overlay.classList.remove("on")}; const openSide=()=>{sidebar.classList.add("open");overlay.classList.add("on")};
-    const readResponseBody=async(response)=>{const text=await response.text(); if(!text) return {}; try{return JSON.parse(text)}catch{return {message:text}}};
-    const api=async(path,options={})=>{
-      const controller=new AbortController();
-      const timeoutId=setTimeout(()=>controller.abort(),30000);
-      try{
-        const response=await fetch(buildApiUrl(path),{...options,mode:"cors",signal:controller.signal});
-        const data=await readResponseBody(response);
-        if(!response.ok){
-          const detail=data.message||`${response.status} ${response.statusText}`||"Request failed";
-          const error=new Error(detail);
-          error.status=response.status;
+    /* ── Config ── */
+    const BACKEND_URL = window.CHATEAZY_BACKEND_URL || (
+      window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+        ? "http://localhost:3001"
+        : "https://backendchat-nu8b.onrender.com"
+    );
+    const buildApiUrl = p => `${BACKEND_URL}${p}`;
+
+    /* ── Helpers ── */
+    const $ = id => document.getElementById(id);
+    const gid = v => !v ? "" : typeof v === "string" ? v : v._id ? gid(v._id) : typeof v.toString === "function" ? v.toString() : "";
+
+    /* ── State ── */
+    const state = {
+      user: null,
+      token: localStorage.getItem("token") || "",
+      users: [],
+      active: null,
+      ids: new Set(),
+      timer: null,
+      pending: 0
+    };
+    let socket = null;
+    let backendWarmupPromise = null;
+
+    /* ── DOM Refs ── */
+    const auth = $("auth"), chat = $("chat"), loginView = $("loginView"), registerView = $("registerView");
+    const loginForm = $("loginForm"), registerForm = $("registerForm");
+    const loginBtn = $("loginBtn"), registerBtn = $("registerBtn");
+    const loginMsg = $("loginMsg"), registerMsg = $("registerMsg");
+    const statusEl = $("status"), meName = $("meName"), meEmail = $("meEmail");
+    const userList = $("userList"), searchInput = $("searchInput");
+    const chatTitle = $("chatTitle"), chatSub = $("chatSub");
+    const messages = $("messages"), messageForm = $("messageForm");
+    const messageInput = $("messageInput"), sendBtn = $("sendBtn");
+    const deleteBtn = $("deleteBtn"), logoutBtn = $("logoutBtn");
+    const sidebar = $("sidebar"), toggleUsers = $("toggleUsers"), overlay = $("overlay");
+    const themeToggle = $("themeToggle");
+
+    /* ── UI Helpers ── */
+    const setStatus = t => statusEl.textContent = t;
+    const setMsg = (el, text, type) => { el.textContent = text || ""; el.className = text ? `msg ${type}` : "msg"; };
+    const setLoading = (btn, on, busy, idle) => { btn.disabled = on; btn.textContent = on ? busy : idle; };
+    const empty = t => messages.innerHTML = `<div class="empty">${t}</div>`;
+    const clearEmpty = () => { const el = messages.querySelector(".empty"); if (el) el.remove(); };
+    const readUser = () => { try { return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; } };
+    const show = screen => { auth.classList.toggle("on", screen === "auth"); chat.classList.toggle("on", screen === "chat"); };
+    const closeSide = () => { sidebar.classList.remove("open"); overlay.classList.remove("on"); };
+    const openSide = () => { sidebar.classList.add("open"); overlay.classList.add("on"); };
+
+    const authMode = path => {
+      const reg = path === "/register";
+      loginView.style.display = reg ? "none" : "block";
+      registerView.style.display = reg ? "block" : "none";
+      show("auth");
+      setStatus(reg ? "Create your account" : "Sign in to continue");
+    };
+
+    /* ── Theme (Light is default) ── */
+    const sunIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+    const moonIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+
+    function setTheme(theme) {
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem("chateazy-theme", theme);
+      themeToggle.innerHTML = theme === "dark" ? sunIcon : moonIcon;
+      themeToggle.setAttribute("aria-label", theme === "dark" ? "Switch to light mode" : "Switch to dark mode");
+    }
+
+    /* Default to light mode */
+    setTheme(localStorage.getItem("chateazy-theme") || "light");
+
+    themeToggle.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme");
+      setTheme(current === "dark" ? "light" : "dark");
+    });
+
+    /* ── Search ── */
+    searchInput.addEventListener("input", () => {
+      const q = searchInput.value.toLowerCase().trim();
+      userList.querySelectorAll(".user").forEach(btn => {
+        const name = (btn.querySelector("strong")?.textContent || "").toLowerCase();
+        const info = (btn.querySelector("span")?.textContent || "").toLowerCase();
+        btn.style.display = (!q || name.includes(q) || info.includes(q)) ? "" : "none";
+      });
+    });
+
+    /* ── API Layer ── */
+    const readResponseBody = async response => {
+      const text = await response.text();
+      if (!text) return {};
+      try { return JSON.parse(text); } catch { return { message: text }; }
+    };
+
+    const api = async (path, options = {}) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      try {
+        const response = await fetch(buildApiUrl(path), { ...options, mode: "cors", signal: controller.signal });
+        const data = await readResponseBody(response);
+        if (!response.ok) {
+          const detail = data.message || `${response.status} ${response.statusText}` || "Request failed";
+          const error = new Error(detail);
+          error.status = response.status;
           throw error;
         }
         return data;
-      }catch(error){
-        if(error.name==="AbortError"){
-          throw new Error("The backend took too long to respond. Render may still be waking up, so please try again in a few seconds.");
-        }
-        if(error instanceof TypeError){
-          throw new Error(`Cannot reach the backend at ${BACKEND_URL}. Check Netlify deploy, Render deploy, and CORS settings.`);
-        }
+      } catch (error) {
+        if (error.name === "AbortError") throw new Error("The backend took too long to respond. Render may still be waking up — please try again in a few seconds.");
+        if (error instanceof TypeError) throw new Error(`Cannot reach the backend at ${BACKEND_URL}. Check Vercel deploy, Render deploy, and CORS settings.`);
         throw error;
-      }finally{
-        clearTimeout(timeoutId);
-      }
+      } finally { clearTimeout(timeoutId); }
     };
-    async function warmupBackend(force=false){
-      if(!force&&backendWarmupPromise)return backendWarmupPromise;
-      backendWarmupPromise=(async()=>{
+
+    async function warmupBackend(force = false) {
+      if (!force && backendWarmupPromise) return backendWarmupPromise;
+      backendWarmupPromise = (async () => {
         setStatus("Connecting to backend...");
-        const data=await api("/");
-        setStatus(data.message||"Backend connected");
+        const data = await api("/");
+        setStatus(data.message || "Backend connected");
         return data;
-      })().catch(error=>{
-        setStatus("Backend unavailable");
-        throw error;
-      });
+      })().catch(() => { setStatus("Backend unavailable"); throw new Error("Backend unavailable"); });
       return backendWarmupPromise;
     }
-    function renderHeader(){if(!state.active){chatTitle.textContent="Choose a conversation";chatSub.textContent="Pick a user to start chatting.";return} chatTitle.textContent=`Chat with ${state.active.username}`;chatSub.textContent=state.active.isLoggedIn?"Online now":"Offline"}
-    function renderUsers(){if(!state.user){userList.innerHTML="";return} const mine=gid(state.user.id),others=state.users.filter(u=>gid(u._id)!==mine); if(!others.length){userList.innerHTML='<div class="empty" style="margin:0">No other users are available yet.</div>';return}
-      userList.innerHTML=others.map(u=>`<button class="user${state.active&&gid(state.active._id)===gid(u._id)?" active":""}" type="button" data-id="${gid(u._id)}"><div class="userline"><span class="dot ${u.isLoggedIn?"online":"offline"}"></span><strong>${u.username}</strong></div><span>${u.isLoggedIn?"Online":"Offline"}${u.email?` • ${u.email}`:""}</span></button>`).join("");
-      userList.querySelectorAll("[data-id]").forEach(btn=>btn.addEventListener("click",async()=>{state.active=others.find(u=>gid(u._id)===btn.dataset.id)||null; renderUsers(); renderHeader(); closeSide(); await loadMessages()}))
+
+    /* ── Render Functions ── */
+    function renderHeader() {
+      if (!state.active) {
+        chatTitle.textContent = "Choose a conversation";
+        chatSub.textContent = "Pick a user to start chatting.";
+        deleteBtn.style.display = "none";
+        return;
+      }
+      chatTitle.textContent = `Chat with ${state.active.username}`;
+      chatSub.textContent = state.active.isLoggedIn ? "Online now" : "Offline";
+      deleteBtn.style.display = "";
     }
-    function append(msg){const id=msg&&msg._id?gid(msg._id):""; if(id&&state.ids.has(id))return; if(id)state.ids.add(id); const mine=state.user&&gid(msg.sender&&msg.sender._id)===gid(state.user.id); const box=document.createElement("div"); box.className=`bubble ${mine?"me":"other"}${msg.pending?" pending":""}`; if(msg.localId)box.dataset.localId=msg.localId;
-      const who=msg.sender&&msg.sender.username?msg.sender.username:"Unknown"; const time=new Date(msg.createdAt||Date.now()).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
-      box.innerHTML=`<div class="meta"><span>${who}</span><span>${time}</span>${msg.pending?"<span>Sending...</span>":""}</div><div>${msg.text}</div>`; messages.appendChild(box); messages.scrollTop=messages.scrollHeight}
-    function renderMessages(list){messages.innerHTML=""; state.ids.clear(); if(!state.active){empty("Select a user from the list to begin chatting.");return} if(!list.length){empty("No messages yet. Say hello to start the conversation.");return} list.forEach(append)}
-    const removePending=id=>{const el=messages.querySelector(`[data-local-id="${id}"]`); if(el)el.remove()};
-    async function loadMessages(){if(!state.user||!state.active){renderMessages([]);return} const p=new URLSearchParams({userId:gid(state.user.id),chatWith:gid(state.active._id)}); const d=await api(`/api/chat/messages?${p.toString()}`); renderMessages(d.messages||[])}
-    async function loadUsers(){const d=await api("/api/chat/online-users"); state.users=d.users||[]; if(state.active)state.active=state.users.find(u=>gid(u._id)===gid(state.active._id))||null; if(!state.active&&state.user){const mine=gid(state.user.id); state.active=state.users.find(u=>gid(u._id)!==mine)||null} renderUsers(); renderHeader(); if(state.active)await loadMessages(); else renderMessages([])}
-    function connect(){if(!state.user||socket)return; socket=io(SOCKET_URL,{transports:["websocket","polling"]}); socket.on("connect",()=>{socket.emit("user:join",{userId:gid(state.user.id)}); setStatus("Connected to live chat")}); socket.on("disconnect",()=>setStatus("Reconnecting to live chat"));
-      socket.on("message:new",payload=>{const msg=payload&&payload.message;if(!msg||!state.active)return; const me=gid(state.user.id),peer=gid(state.active._id),s=gid(msg.sender&&msg.sender._id),r=gid(msg.receiver&&msg.receiver._id); if((s===me&&r===peer)||(s===peer&&r===me)){clearEmpty(); append(msg)}});
-      socket.on("conversation:cleared",payload=>{if(!payload||!state.user||!state.active)return; const me=gid(state.user.id),peer=gid(state.active._id),a=gid(payload.userId),b=gid(payload.chatWith); if((a===me&&b===peer)||(a===peer&&b===me)){renderMessages([])}})
+
+    function renderUsers() {
+      if (!state.user) { userList.innerHTML = ""; return; }
+      const mine = gid(state.user.id);
+      const others = state.users.filter(u => gid(u._id) !== mine);
+      if (!others.length) {
+        userList.innerHTML = '<div class="empty" style="margin:0">No other users are available yet.</div>';
+        return;
+      }
+      userList.innerHTML = others.map(u =>
+        `<button class="user${state.active && gid(state.active._id) === gid(u._id) ? " active" : ""}" type="button" data-id="${gid(u._id)}">
+          <div class="userline"><span class="dot ${u.isLoggedIn ? "online" : "offline"}"></span><strong>${u.username}</strong></div>
+          <span>${u.isLoggedIn ? "Online" : "Offline"}${u.email ? ` · ${u.email}` : ""}</span>
+        </button>`
+      ).join("");
+
+      userList.querySelectorAll("[data-id]").forEach(btn =>
+        btn.addEventListener("click", async () => {
+          state.active = others.find(u => gid(u._id) === btn.dataset.id) || null;
+          renderUsers();
+          renderHeader();
+          closeSide();
+          await loadMessages();
+        })
+      );
+
+      searchInput.dispatchEvent(new Event("input"));
     }
-    function disconnect(){if(socket){socket.disconnect();socket=null}}
-    function stopLoop(){if(state.timer){clearInterval(state.timer);state.timer=null}}
-    function startLoop(){stopLoop();state.timer=setInterval(()=>loadUsers().catch(()=>{}),5000)}
-    function clearSession(){state.token="";state.user=null;state.users=[];state.active=null;localStorage.removeItem("token");localStorage.removeItem("user");disconnect();stopLoop(); renderUsers(); renderMessages([])}
-    function hydrate(){state.user=readUser(); state.token=localStorage.getItem("token")||""; if(state.user&&state.token){meName.textContent=state.user.username||"Unknown user"; meEmail.textContent=state.user.email||""; connect(); startLoop()}}
-    async function onLogin(e){e.preventDefault(); setMsg(loginMsg,"",""); setLoading(loginBtn,true,"Signing In...","Sign In"); try{await warmupBackend(); const f=new FormData(loginForm),payload={login:String(f.get("login")||"").trim(),password:String(f.get("password")||"")}; if(!payload.login||!payload.password)throw new Error("Please fill in all login fields."); const d=await api("/api/users/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
-      localStorage.setItem("token",d.token); localStorage.setItem("user",JSON.stringify(d.user)); state.user=d.user; state.token=d.token; meName.textContent=d.user.username||"Unknown user"; meEmail.textContent=d.user.email||""; setMsg(loginMsg,"Login successful. Opening chat...","ok"); connect(); startLoop(); go("/chat"); await loadUsers()}catch(err){setMsg(loginMsg,err.message||"Login failed","bad")}finally{setLoading(loginBtn,false,"Signing In...","Sign In")}}
-    async function onRegister(e){e.preventDefault(); setMsg(registerMsg,"",""); setLoading(registerBtn,true,"Creating...","Create Account"); try{await warmupBackend(); const f=new FormData(registerForm),payload={username:String(f.get("username")||"").trim(),email:String(f.get("email")||"").trim(),password:String(f.get("password")||"")}; if(!payload.username||!payload.email||!payload.password)throw new Error("Please fill in all registration fields."); await api("/api/users/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}); registerForm.reset(); setMsg(registerMsg,"Account created. You can sign in now.","ok"); go("/login")}catch(err){setMsg(registerMsg,err.message||"Registration failed","bad")}finally{setLoading(registerBtn,false,"Creating...","Create Account")}}
-    async function onSend(e){e.preventDefault(); if(!state.user||!state.active){alert("Please select a user first.");return} const text=messageInput.value.trim(); if(!text)return; const localId=`pending-${Date.now()}-${++state.pending}`; messageInput.value=""; clearEmpty(); append({localId,pending:true,text,createdAt:Date.now(),sender:{_id:gid(state.user.id),username:state.user.username}}); sendBtn.disabled=true;
-      const fallback=()=>api("/api/chat/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({senderId:gid(state.user.id),receiverId:gid(state.active._id),text})}).then(d=>d.data);
-      try{const sent=await new Promise((resolve,reject)=>{if(!socket){fallback().then(resolve).catch(reject);return} socket.emit("message:send",{senderId:gid(state.user.id),receiverId:gid(state.active._id),text},async response=>{if(response&&response.ok&&response.message){resolve(response.message);return} try{resolve(await fallback())}catch(err){reject(err)}})});
-        removePending(localId); append(sent); messageInput.focus()}catch(err){removePending(localId); messageInput.value=text; messageInput.focus(); alert(err.message||"Message send failed.")}finally{sendBtn.disabled=false}}
-    async function onDelete(){if(!state.user||!state.active){alert("Please select a user first.");return} if(!confirm(`Delete your conversation with ${state.active.username}? This removes those messages from the database.`))return; try{const params=new URLSearchParams({userId:gid(state.user.id),chatWith:gid(state.active._id)}); await api(`/api/chat/messages?${params.toString()}`,{method:"DELETE"}); renderMessages([])}catch(err){alert(err.message||"Could not delete messages.")}}
-    async function onLogout(){const id=state.user?gid(state.user.id):""; try{if(id)await api("/api/users/logout",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId:id})})}catch{} finally{clearSession(); meName.textContent="Signed out"; meEmail.textContent="Log in to start chatting"; go("/login"); loginForm.reset(); registerForm.reset(); closeSide()}}
-    function route(){let path=location.pathname; if(path==="/"||path==="/index.html")path=state.user&&state.token?"/chat":"/login"; if(path==="/login.html")path="/login"; if(path==="/register.html")path="/register"; if(path==="/chatdashboard.html")path="/chat"; if(path==="/chat"&&!(state.user&&state.token))path="/login";
-      if(path==="/chat"){show("chat"); setStatus("Loading chat..."); renderHeader(); loadUsers().then(()=>setStatus("Chateazy is live")).catch(err=>{renderMessages([]); setStatus(err.message||"Could not load chat")}); return} authMode(path==="/register"?"/register":"/login")}
-    function go(path){if(location.pathname!==path)history.pushState({}, "", path); route()}
-    document.querySelectorAll("[data-link]").forEach(a=>a.addEventListener("click",e=>{e.preventDefault(); go(a.dataset.link)}));
-    loginForm.addEventListener("submit",onLogin); registerForm.addEventListener("submit",onRegister); messageForm.addEventListener("submit",onSend); deleteBtn.addEventListener("click",onDelete); logoutBtn.addEventListener("click",onLogout); toggleUsers.addEventListener("click",openSide); overlay.addEventListener("click",closeSide); addEventListener("popstate",route); addEventListener("beforeunload",()=>{disconnect(); stopLoop()});
-    hydrate(); warmupBackend().catch(()=>{}); route();
+
+    function append(msg) {
+      const id = msg && msg._id ? gid(msg._id) : "";
+      if (id && state.ids.has(id)) return;
+      if (id) state.ids.add(id);
+      const mine = state.user && gid(msg.sender && msg.sender._id) === gid(state.user.id);
+      const box = document.createElement("div");
+      box.className = `bubble ${mine ? "me" : "other"}${msg.pending ? " pending" : ""}`;
+      if (msg.localId) box.dataset.localId = msg.localId;
+      const who = msg.sender && msg.sender.username ? msg.sender.username : "Unknown";
+      const time = new Date(msg.createdAt || Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      box.innerHTML = `<div class="meta"><span>${who}</span><span>${time}</span>${msg.pending ? "<span>Sending...</span>" : ""}</div><div>${msg.text}</div>`;
+      messages.appendChild(box);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function renderMessages(list) {
+      messages.innerHTML = "";
+      state.ids.clear();
+      if (!state.active) { empty("Select a user from the list to begin chatting."); return; }
+      if (!list.length) { empty("No messages yet. Say hello to start the conversation."); return; }
+      list.forEach(append);
+    }
+
+    const removePending = id => { const el = messages.querySelector(`[data-local-id="${id}"]`); if (el) el.remove(); };
+
+    /* ── Data Loaders ── */
+    async function loadMessages() {
+      if (!state.user || !state.active) { renderMessages([]); return; }
+      const p = new URLSearchParams({ userId: gid(state.user.id), chatWith: gid(state.active._id) });
+      const d = await api(`/api/chat/messages?${p.toString()}`);
+      renderMessages(d.messages || []);
+    }
+
+    async function loadUsers() {
+      const d = await api("/api/chat/online-users");
+      state.users = d.users || [];
+      if (state.active) state.active = state.users.find(u => gid(u._id) === gid(state.active._id)) || null;
+      if (!state.active && state.user) {
+        const mine = gid(state.user.id);
+        state.active = state.users.find(u => gid(u._id) !== mine) || null;
+      }
+      renderUsers();
+      renderHeader();
+      if (state.active) await loadMessages();
+      else renderMessages([]);
+    }
+
+    /* ── Socket.IO ── */
+    function connect() {
+      if (!state.user || socket) return;
+      socket = io(BACKEND_URL, { transports: ["websocket", "polling"] });
+      socket.on("connect", () => {
+        socket.emit("user:join", { userId: gid(state.user.id) });
+        setStatus("Connected to live chat");
+      });
+      socket.on("disconnect", () => setStatus("Reconnecting to live chat"));
+      socket.on("message:new", payload => {
+        const msg = payload && payload.message;
+        if (!msg || !state.active) return;
+        const me = gid(state.user.id), peer = gid(state.active._id);
+        const s = gid(msg.sender && msg.sender._id), r = gid(msg.receiver && msg.receiver._id);
+        if ((s === me && r === peer) || (s === peer && r === me)) { clearEmpty(); append(msg); }
+      });
+      socket.on("conversation:cleared", payload => {
+        if (!payload || !state.user || !state.active) return;
+        const me = gid(state.user.id), peer = gid(state.active._id);
+        const a = gid(payload.userId), b = gid(payload.chatWith);
+        if ((a === me && b === peer) || (a === peer && b === me)) renderMessages([]);
+      });
+    }
+
+    function disconnect() { if (socket) { socket.disconnect(); socket = null; } }
+    function stopLoop() { if (state.timer) { clearInterval(state.timer); state.timer = null; } }
+    function startLoop() { stopLoop(); state.timer = setInterval(() => loadUsers().catch(() => { }), 5000); }
+
+    /* ── Session ── */
+    function clearSession() {
+      state.token = ""; state.user = null; state.users = []; state.active = null;
+      localStorage.removeItem("token"); localStorage.removeItem("user");
+      disconnect(); stopLoop();
+      renderUsers(); renderMessages([]);
+    }
+
+    function hydrate() {
+      state.user = readUser();
+      state.token = localStorage.getItem("token") || "";
+      if (state.user && state.token) {
+        meName.textContent = state.user.username || "Unknown user";
+        meEmail.textContent = state.user.email || "";
+        connect(); startLoop();
+      }
+    }
+
+    /* ── Event Handlers ── */
+    async function onLogin(e) {
+      e.preventDefault();
+      setMsg(loginMsg, "", "");
+      setLoading(loginBtn, true, "Signing In...", "Sign In");
+      try {
+        await warmupBackend();
+        const f = new FormData(loginForm);
+        const payload = { login: String(f.get("login") || "").trim(), password: String(f.get("password") || "") };
+        if (!payload.login || !payload.password) throw new Error("Please fill in all login fields.");
+        const d = await api("/api/users/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        localStorage.setItem("token", d.token);
+        localStorage.setItem("user", JSON.stringify(d.user));
+        state.user = d.user; state.token = d.token;
+        meName.textContent = d.user.username || "Unknown user";
+        meEmail.textContent = d.user.email || "";
+        setMsg(loginMsg, "Login successful. Opening chat...", "ok");
+        connect(); startLoop(); go("/chat");
+        await loadUsers();
+      } catch (err) {
+        setMsg(loginMsg, err.message || "Login failed", "bad");
+      } finally { setLoading(loginBtn, false, "Signing In...", "Sign In"); }
+    }
+
+    async function onRegister(e) {
+      e.preventDefault();
+      setMsg(registerMsg, "", "");
+      setLoading(registerBtn, true, "Creating...", "Create Account");
+      try {
+        await warmupBackend();
+        const f = new FormData(registerForm);
+        const payload = {
+          username: String(f.get("username") || "").trim(),
+          email: String(f.get("email") || "").trim(),
+          password: String(f.get("password") || "")
+        };
+        if (!payload.username || !payload.email || !payload.password) throw new Error("Please fill in all registration fields.");
+        await api("/api/users/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        registerForm.reset();
+        setMsg(registerMsg, "Account created. You can sign in now.", "ok");
+        go("/login");
+      } catch (err) {
+        setMsg(registerMsg, err.message || "Registration failed", "bad");
+      } finally { setLoading(registerBtn, false, "Creating...", "Create Account"); }
+    }
+
+    async function onSend(e) {
+      e.preventDefault();
+      if (!state.user || !state.active) { alert("Please select a user first."); return; }
+      const text = messageInput.value.trim();
+      if (!text) return;
+      const localId = `pending-${Date.now()}-${++state.pending}`;
+      messageInput.value = "";
+      clearEmpty();
+      append({ localId, pending: true, text, createdAt: Date.now(), sender: { _id: gid(state.user.id), username: state.user.username } });
+      sendBtn.disabled = true;
+      const fallback = () => api("/api/chat/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ senderId: gid(state.user.id), receiverId: gid(state.active._id), text })
+      }).then(d => d.data);
+      try {
+        const sent = await new Promise((resolve, reject) => {
+          if (!socket) { fallback().then(resolve).catch(reject); return; }
+          socket.emit("message:send", { senderId: gid(state.user.id), receiverId: gid(state.active._id), text }, async response => {
+            if (response && response.ok && response.message) { resolve(response.message); return; }
+            try { resolve(await fallback()); } catch (err) { reject(err); }
+          });
+        });
+        removePending(localId);
+        append(sent);
+        messageInput.focus();
+      } catch (err) {
+        removePending(localId);
+        messageInput.value = text;
+        messageInput.focus();
+        alert(err.message || "Message send failed.");
+      } finally { sendBtn.disabled = false; }
+    }
+
+    async function onDelete() {
+      if (!state.user || !state.active) { alert("Please select a user first."); return; }
+      if (!confirm(`Delete your conversation with ${state.active.username}? This removes those messages from the database.`)) return;
+      try {
+        const params = new URLSearchParams({ userId: gid(state.user.id), chatWith: gid(state.active._id) });
+        await api(`/api/chat/messages?${params.toString()}`, { method: "DELETE" });
+        renderMessages([]);
+      } catch (err) { alert(err.message || "Could not delete messages."); }
+    }
+
+    async function onLogout() {
+      const id = state.user ? gid(state.user.id) : "";
+      try { if (id) await api("/api/users/logout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: id }) }); } catch { }
+      finally {
+        clearSession();
+        meName.textContent = "Signed out";
+        meEmail.textContent = "Log in to start chatting";
+        go("/login");
+        loginForm.reset();
+        registerForm.reset();
+        closeSide();
+      }
+    }
+
+    /* ── Routing ── */
+    function route() {
+      let path = location.pathname;
+      if (path === "/" || path === "/index.html") path = state.user && state.token ? "/chat" : "/login";
+      if (path === "/login.html") path = "/login";
+      if (path === "/register.html") path = "/register";
+      if (path === "/chatdashboard.html") path = "/chat";
+      if (path === "/chat" && !(state.user && state.token)) path = "/login";
+      if (path === "/chat") {
+        show("chat");
+        setStatus("Loading chat...");
+        renderHeader();
+        loadUsers().then(() => setStatus("Chateazy is live")).catch(err => {
+          renderMessages([]);
+          setStatus(err.message || "Could not load chat");
+        });
+        return;
+      }
+      authMode(path === "/register" ? "/register" : "/login");
+    }
+
+    function go(path) {
+      if (location.pathname !== path) history.pushState({}, "", path);
+      route();
+    }
+
+    /* ── Bind Events ── */
+    document.querySelectorAll("[data-link]").forEach(a =>
+      a.addEventListener("click", e => { e.preventDefault(); go(a.dataset.link); })
+    );
+    loginForm.addEventListener("submit", onLogin);
+    registerForm.addEventListener("submit", onRegister);
+    messageForm.addEventListener("submit", onSend);
+    deleteBtn.addEventListener("click", onDelete);
+    logoutBtn.addEventListener("click", onLogout);
+    toggleUsers.addEventListener("click", openSide);
+    overlay.addEventListener("click", closeSide);
+    addEventListener("popstate", route);
+    addEventListener("beforeunload", () => { disconnect(); stopLoop(); });
+
+    /* ── Boot ── */
+    hydrate();
+    warmupBackend().catch(() => { });
+    route();
   </script>
 </body>
 </html>
