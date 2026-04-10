@@ -130,10 +130,10 @@
       scrollbar-width:thin;
       scrollbar-color:var(--scroll-thumb) var(--scroll-track);
     }
-   .users-scroll::-webkit-scrollbar{width:6px}
-.users-scroll::-webkit-scrollbar-track{background:var(--scroll-track);border-radius:3px}
-.users-scroll::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border-radius:3px}
-.users-scroll::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+    .scrollable::-webkit-scrollbar{width:6px}
+    .scrollable::-webkit-scrollbar-track{background:var(--scroll-track);border-radius:3px}
+    .scrollable::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border-radius:3px}
+    .scrollable::-webkit-scrollbar-thumb:hover{background:var(--accent)}
 
     /* ── Auth Screen ── */
     .auth{
@@ -263,13 +263,17 @@
       display:flex;flex-direction:column;
     }
     .users-label{flex-shrink:0;padding:14px 16px 8px}
-  .users-scroll{
-  flex:1;min-height:0;padding:0 16px 16px;
-  overflow-y:auto;overflow-x:hidden;
-  display:flex;flex-direction:column;gap:9px;
-  scrollbar-width:thin;
-  scrollbar-color:var(--scroll-thumb) var(--scroll-track);
-}
+    .users-scroll{
+      flex:1;min-height:0;padding:0 16px 16px;
+      overflow-y:auto;overflow-x:hidden;
+      display:flex;flex-direction:column;gap:9px;
+      scrollbar-width:thin;
+      scrollbar-color:var(--scroll-thumb) var(--scroll-track);
+    }
+    .users-scroll::-webkit-scrollbar{width:6px}
+    .users-scroll::-webkit-scrollbar-track{background:var(--scroll-track);border-radius:3px}
+    .users-scroll::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border-radius:3px}
+    .users-scroll::-webkit-scrollbar-thumb:hover{background:var(--accent)}
     .user{
       width:100%;text-align:left;padding:12px 14px;
       border-radius:14px;border:1px solid var(--line);
@@ -299,7 +303,12 @@
     }
     .head-info strong{display:block;font-size:1rem}
     .head-info span{color:var(--muted);font-size:.86rem}
-    .acts{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+    .acts{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:9px;
+      align-items:center;
+    }
 
     /* Messages */
     .msgs{
@@ -331,7 +340,7 @@
     .bubble.pending{opacity:.7}
     .meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;font-size:.72rem;font-weight:700;opacity:.65}
 
-    /* ── Compose — WhatsApp-style pill input + arrow button ── */
+    /* ── Compose ── */
     .compose{
       flex-shrink:0;
       padding:12px 18px 18px;
@@ -421,7 +430,9 @@
       .head-info strong{font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .head-info span{font-size:.78rem}
       .acts{
-        display:flex;gap:6px;
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:6px;
         flex-shrink:0;
       }
       .acts .btn{
@@ -429,7 +440,6 @@
         font-size:.76rem;
         border-radius:10px;
         white-space:nowrap;
-        flex:none;
       }
       .acts .danger{
         padding:9px 10px;
@@ -485,7 +495,16 @@
       .bubble{max-width:88%}
       .grid{grid-template-columns:1fr}
       .hero h2{font-size:2rem}
-      .acts .btn,.acts .danger{padding:8px 8px;font-size:.72rem;border-radius:8px}
+      .acts{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:6px;
+      }
+      .acts .btn,.acts .danger{
+        padding:8px 8px;
+        font-size:.72rem;
+        border-radius:8px;
+      }
     }
 
     /* ── Reduced Motion ── */
