@@ -303,11 +303,9 @@
     }
     .head-info strong{display:block;font-size:1rem}
     .head-info span{color:var(--muted);font-size:.86rem}
-    
-    /* 3-Button Grid for DeleteChat, Logout, Users */
     .acts{
       display:grid;
-      grid-template-columns:1fr 1fr 1fr;
+      grid-template-columns:1fr 1fr;
       gap:9px;
       align-items:center;
     }
@@ -432,7 +430,8 @@
       .head-info strong{font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .head-info span{font-size:.78rem}
       .acts{
-        grid-template-columns:1fr 1fr 1fr;
+        display:grid;
+        grid-template-columns:1fr 1fr;
         gap:6px;
         flex-shrink:0;
       }
@@ -497,7 +496,8 @@
       .grid{grid-template-columns:1fr}
       .hero h2{font-size:2rem}
       .acts{
-        grid-template-columns:1fr 1fr 1fr;
+        display:grid;
+        grid-template-columns:1fr 1fr;
         gap:6px;
       }
       .acts .btn,.acts .danger{
