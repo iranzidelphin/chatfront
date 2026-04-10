@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
   <style>
-       /* ── Theme Variables ── */
+          /* ── Theme Variables ── */
     :root,[data-theme="dark"]{
       --body-bg:radial-gradient(circle at top left,rgba(34,197,94,.1),transparent 32%),radial-gradient(circle at bottom right,rgba(34,197,94,.06),transparent 30%),linear-gradient(180deg,#050505,#0a0a0a);
       --app-bg:#0a0a0a;--app-bg2:rgba(10,10,10,.97);
@@ -303,9 +303,11 @@
     }
     .head-info strong{display:block;font-size:1rem}
     .head-info span{color:var(--muted);font-size:.86rem}
+    
+    /* 3-Button Grid for DeleteChat, Logout, Users */
     .acts{
       display:grid;
-      grid-template-columns:1fr 1fr;
+      grid-template-columns:1fr 1fr 1fr;
       gap:9px;
       align-items:center;
     }
@@ -430,8 +432,7 @@
       .head-info strong{font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .head-info span{font-size:.78rem}
       .acts{
-        display:grid;
-        grid-template-columns:1fr 1fr;
+        grid-template-columns:1fr 1fr 1fr;
         gap:6px;
         flex-shrink:0;
       }
@@ -496,8 +497,7 @@
       .grid{grid-template-columns:1fr}
       .hero h2{font-size:2rem}
       .acts{
-        display:grid;
-        grid-template-columns:1fr 1fr;
+        grid-template-columns:1fr 1fr 1fr;
         gap:6px;
       }
       .acts .btn,.acts .danger{
@@ -607,9 +607,10 @@
               <span id="chatSub">Pick an online user to start chatting.</span>
             </div>
             <div class="acts">
-              <!-- <button id="deleteBtn" class="btn danger" type="button" style="display:none">Delete Chat</button> -->
+          
               <button id="toggleUsers" class="btn ghost toggle" type="button" aria-label="Open users panel">Users</button>
             
+               <button id="deleteBtn" class="btn danger" type="button" style="display:none">Delete Chat</button> 
 
               <button id="logoutBtn" class="btn ghost" type="button">Logout</button>
             </div>
