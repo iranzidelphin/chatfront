@@ -881,7 +881,7 @@
     const setFindFriendVisibility = (visible) => {
       state.showFindFriends = Boolean(visible);
       findFriendPanel.classList.toggle("hidden", !state.showFindFriends);
-      findFriendToggle.textContent = state.showFindFriends ? "Hide Find Friend" : "Find Friend";
+      findFriendToggle.textContent = state.showFindFriends ? "Show Your Friends" : "Find Friend";
     };
     const stampActivity = (userId, when = Date.now()) => {
       const id = gid(userId);
