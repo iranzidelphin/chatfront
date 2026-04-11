@@ -278,7 +278,7 @@
     .friend-stats{
       flex-shrink:0;padding:14px 16px 10px;
       border-bottom:1px solid var(--line);
-      display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
     }
     .stat-card{
       padding:12px;border-radius:14px;border:1px solid var(--line);
@@ -716,6 +716,10 @@
               <span>Friends</span>
             </div>
             <div class="stat-card">
+              <strong id="messageCount">0</strong>
+              <span>Messages</span>
+            </div>
+            <div class="stat-card">
               <strong id="requestCount">0</strong>
               <span>Requests</span>
             </div>
@@ -792,13 +796,16 @@
       outgoingRequests: [],
       discoverUsers: [],
       friendCount: 0,
+      unreadMessageCount: 0,
       active: null,
       ids: new Set(),
       unread: new Map(),
       activity: new Map(),
       latestMessage: new Map(),
       timer: null,
-      pending: 0
+      pending: 0,
+      notifiedRequests: new Set(),
+      announcedUnreadByUser: new Map()
     };
     let socket = null;
     let backendWarmupPromise = null;
@@ -819,7 +826,7 @@
     const statusEl = $("status"), meName = $("meName"), meEmail = $("meEmail");
     const userList = $("userList"), searchInput = $("searchInput");
     const requestList = $("requestList"), findFriendList = $("findFriendList");
-    const friendCountEl = $("friendCount"), requestCountEl = $("requestCount");
+    const friendCountEl = $("friendCount"), messageCountEl = $("messageCount"), requestCountEl = $("requestCount");
     const chatTitle = $("chatTitle"), chatSub = $("chatSub");
     const messages = $("messages"), messageForm = $("messageForm");
     const messageInput = $("messageInput"), sendBtn = $("sendBtn");
@@ -869,13 +876,17 @@
     };
     const getUnread = userId => state.unread.get(gid(userId)) || 0;
     const updateDocumentTitle = () => {
-      const totalUnread = [...state.unread.values()].reduce((sum, count) => sum + count, 0);
+      const totalUnread = Number(state.unreadMessageCount || 0) + Number((state.incomingRequests || []).length || 0);
       document.title = totalUnread > 0 ? `(${totalUnread}) ${defaultTitle}` : defaultTitle;
     };
     const clearUnread = userId => {
       const id = gid(userId);
       if (!id) return;
+      const previousCount = getUnread(id);
       state.unread.delete(id);
+      state.announcedUnreadByUser.delete(id);
+      state.unreadMessageCount = Math.max(0, (state.unreadMessageCount || 0) - previousCount);
+      renderStats();
       updateDocumentTitle();
     };
     const queueNetworkRefresh = () => {
@@ -902,10 +913,10 @@
       if (state.users.some(friend => gid(friend._id) === targetId)) return;
       state.users = [...state.users, { ...user, relation: "friend", canMessage: true }];
     };
-    const showIncomingAlert = (username, text) => {
+    const showIncomingAlert = (title, text) => {
       if (!toastAlert) return;
       clearTimeout(toastTimer);
-      toastAlert.innerHTML = `<strong>New message from ${username}</strong><span>${text}</span>`;
+      toastAlert.innerHTML = `<strong>${title}</strong><span>${text}</span>`;
       toastAlert.classList.add("on");
       toastTimer = setTimeout(() => toastAlert.classList.remove("on"), 4200);
     };
@@ -973,15 +984,9 @@
         return "default";
       }
     };
-    const notifyIncomingMessage = async (username, text, peerId) => {
-      showIncomingAlert(username, text);
-      if ("vibrate" in navigator) {
-        try { navigator.vibrate([300, 150, 300, 150, 300]); } catch {}
-      }
+    const showDesktopNotification = async (title, options, peerId = "") => {
       const permission = await requestNotificationPermission();
       if (permission !== "granted") return;
-      const title = `New message from ${username}`;
-      const options = getNotificationOptions(username, text, peerId);
       try {
         const registration = swRegistration || await navigator.serviceWorker.getRegistration();
         if (registration) {
@@ -998,6 +1003,58 @@
           notification.close();
         };
       } catch {}
+    };
+    const notifyIncomingMessage = async (username, text, peerId) => {
+      showIncomingAlert(`New message from ${username}`, text);
+      if ("vibrate" in navigator) {
+        try { navigator.vibrate([300, 150, 300, 150, 300]); } catch {}
+      }
+      const title = `New message from ${username}`;
+      const options = getNotificationOptions(username, text, peerId);
+      await showDesktopNotification(title, options, peerId);
+    };
+    const notifyIncomingFriendRequest = async (username, userId) => {
+      showIncomingAlert(`Friend request from ${username}`, "Open Requests to confirm or reject.");
+      if ("vibrate" in navigator) {
+        try { navigator.vibrate([300, 150, 300, 150, 300]); } catch {}
+      }
+      await showDesktopNotification(
+        `Friend request from ${username}`,
+        {
+          body: "Open Requests to confirm or reject.",
+          tag: `friend-request-${userId || username}`,
+          renotify: true,
+          requireInteraction: true,
+          silent: false,
+          vibrate: [300, 150, 300, 150, 300],
+          data: {
+            url: "/#/chat",
+            peerId: userId || "",
+            sender: username
+          }
+        },
+        userId
+      );
+    };
+    const notifyUnreadSummary = async (username, count, peerId) => {
+      const plural = count === 1 ? "message" : "messages";
+      showIncomingAlert(`Unread messages from ${username}`, `You have ${count} unread ${plural}.`);
+      await showDesktopNotification(
+        `Unread messages from ${username}`,
+        {
+          body: `You have ${count} unread ${plural}.`,
+          tag: `offline-msg-${peerId || username}`,
+          renotify: true,
+          requireInteraction: true,
+          silent: false,
+          data: {
+            url: `/#${getTargetChatPath(peerId)}`,
+            peerId: peerId || "",
+            sender: username
+          }
+        },
+        peerId
+      );
     };
     const ensureAudioContext = async () => {
       if (!("AudioContext" in window || "webkitAudioContext" in window)) return null;
@@ -1036,7 +1093,7 @@
       soundTimer = setInterval(() => {
         ticks += 1;
         playPing();
-        if (ticks >= 10) stopIncomingSound();
+        if (ticks >= 3) stopIncomingSound();
       }, 1000);
     };
     const touchMessageActivity = msg => {
@@ -1176,7 +1233,9 @@
 
     function renderStats() {
       friendCountEl.textContent = String(state.friendCount || 0);
+      messageCountEl.textContent = String(state.unreadMessageCount || 0);
       requestCountEl.textContent = String((state.incomingRequests || []).length);
+      updateDocumentTitle();
     }
 
     async function openConversationWith(userId) {
@@ -1211,6 +1270,30 @@
         }));
         renderFindFriends();
         alert(err.message || "Could not send friend request.");
+      }
+    }
+
+    async function cancelFriendRequestAction(targetUserId) {
+      if (!state.user) return;
+      updateDiscoverUser(targetUserId, user => ({
+        ...user,
+        relation: "none"
+      }));
+      renderFindFriends();
+      try {
+        await api("/api/users/friend-requests/cancel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: gid(state.user.id), targetUserId: gid(targetUserId) })
+        });
+        queueNetworkRefresh();
+      } catch (err) {
+        updateDiscoverUser(targetUserId, user => ({
+          ...user,
+          relation: "outgoing"
+        }));
+        renderFindFriends();
+        alert(err.message || "Could not cancel friend request.");
       }
     }
 
@@ -1293,14 +1376,16 @@
           : user.relation === "incoming"
             ? "Requested you"
             : `Online now • ${user.friendCount || 0} friend${(user.friendCount || 0) === 1 ? "" : "s"}`;
-        const addDisabled = user.relation === "outgoing" || user.relation === "incoming";
+        const isOutgoing = user.relation === "outgoing";
+        const addDisabled = user.relation === "incoming";
+        const addLabel = isOutgoing ? "Cancel Request" : "Add Friend";
 
         return `<div class="network-card" data-id="${gid(user._id)}">
           <strong>${user.username}</strong>
           <p>${requestState}</p>
           <div class="action-row">
             <button class="small-btn" type="button" data-message="${gid(user._id)}" ${user.canMessage ? "" : "disabled"}>Message</button>
-            <button class="small-btn primary-action" type="button" data-add="${gid(user._id)}" ${addDisabled ? "disabled" : ""}>Add Friend</button>
+            <button class="small-btn primary-action" type="button" data-add="${gid(user._id)}" data-relation="${user.relation}" ${addDisabled ? "disabled" : ""}>${addLabel}</button>
           </div>
         </div>`;
       }).join("");
@@ -1309,7 +1394,14 @@
         btn.addEventListener("click", () => { if (!btn.disabled) openConversationWith(btn.dataset.message); })
       );
       findFriendList.querySelectorAll("[data-add]").forEach(btn =>
-        btn.addEventListener("click", () => { if (!btn.disabled) sendFriendRequestAction(btn.dataset.add); })
+        btn.addEventListener("click", () => {
+          if (btn.disabled) return;
+          if (btn.dataset.relation === "outgoing") {
+            cancelFriendRequestAction(btn.dataset.add);
+            return;
+          }
+          sendFriendRequestAction(btn.dataset.add);
+        })
       );
     }
 
@@ -1380,6 +1472,39 @@
     }
 
     const removePending = id => { const el = messages.querySelector(`[data-local-id="${id}"]`); if (el) el.remove(); };
+    const syncUnreadMessages = (unreadByUser) => {
+      state.unread = new Map(Object.entries(unreadByUser || {}).map(([userId, count]) => [gid(userId), Number(count) || 0]));
+      state.unreadMessageCount = [...state.unread.values()].reduce((sum, count) => sum + count, 0);
+    };
+    const announceNetworkNotifications = () => {
+      const activeRequestIds = new Set((state.incomingRequests || []).map((user) => gid(user._id)).filter(Boolean));
+      [...state.notifiedRequests].forEach((userId) => {
+        if (!activeRequestIds.has(userId)) {
+          state.notifiedRequests.delete(userId);
+        }
+      });
+
+      (state.incomingRequests || []).forEach((user) => {
+        const id = gid(user._id);
+        if (!id || state.notifiedRequests.has(id)) return;
+        state.notifiedRequests.add(id);
+        notifyIncomingFriendRequest(user.username || "Someone", id).catch(() => {});
+        playIncomingSound().catch(() => {});
+      });
+
+      state.unread.forEach((count, userId) => {
+        const previous = state.announcedUnreadByUser.get(userId) || 0;
+        if (count > previous) {
+          const user =
+            state.users.find((friend) => gid(friend._id) === userId) ||
+            state.discoverUsers.find((person) => gid(person._id) === userId) ||
+            null;
+          notifyUnreadSummary(user?.username || "Someone", count, userId).catch(() => {});
+          playIncomingSound().catch(() => {});
+        }
+        state.announcedUnreadByUser.set(userId, count);
+      });
+    };
 
     /* ── Data Loaders ── */
     async function loadMessages() {
@@ -1389,6 +1514,7 @@
       const list = d.messages || [];
       const last = list[list.length - 1];
       if (last) touchMessageActivity(last);
+      clearUnread(state.active._id);
       renderMessages(list);
     }
 
@@ -1414,6 +1540,7 @@
       state.outgoingRequests = d.outgoingRequests || [];
       state.discoverUsers = (d.onlineUsers || []).filter(user => user.relation !== "friend");
       state.friendCount = d.friendCount || 0;
+      syncUnreadMessages(d.unreadMessagesByUser || {});
       const targetPeer = readRouteParams().get("peer");
       if (state.active) state.active = state.users.find(u => gid(u._id) === gid(state.active._id)) || null;
       if (targetPeer) {
@@ -1429,6 +1556,7 @@
       renderFindFriends();
       renderUsers();
       renderHeader();
+      announceNetworkNotifications();
       if (state.active && (refreshMessages || activeChanged)) await loadMessages();
       else if (!state.active) renderMessages([]);
     }
@@ -1446,6 +1574,16 @@
       socket.on("network:refresh", () => {
         queueNetworkRefresh();
       });
+      socket.on("friend-request:new", payload => {
+        const fromUser = payload && payload.fromUser;
+        if (!fromUser) return;
+        if (!state.notifiedRequests.has(gid(fromUser._id))) {
+          state.notifiedRequests.add(gid(fromUser._id));
+        }
+        notifyIncomingFriendRequest(fromUser.username || "Someone", gid(fromUser._id)).catch(() => {});
+        playIncomingSound().catch(() => {});
+        queueNetworkRefresh();
+      });
       socket.on("message:new", payload => {
         const msg = payload && payload.message;
         if (!msg || !state.user) return;
@@ -1456,14 +1594,27 @@
         const peer = s === me ? r : s;
         const activePeer = state.active ? gid(state.active._id) : "";
         if (s !== me) {
-          state.unread.set(peer, getUnread(peer) + 1);
-          const senderName = msg.sender && msg.sender.username ? msg.sender.username : "Someone";
-          notifyIncomingMessage(senderName, msg.text || "Sent you a message", peer);
-          playIncomingSound().catch(() => {});
+          if (peer === activePeer) {
+            socket.emit("messages:read", { userId: me, chatWith: peer }, () => {});
+          } else {
+            state.unread.set(peer, getUnread(peer) + 1);
+            state.unreadMessageCount = (state.unreadMessageCount || 0) + 1;
+            state.announcedUnreadByUser.set(peer, getUnread(peer));
+            const senderName = msg.sender && msg.sender.username ? msg.sender.username : "Someone";
+            notifyIncomingMessage(senderName, msg.text || "Sent you a message", peer);
+            playIncomingSound().catch(() => {});
+          }
         }
+        renderStats();
         renderUsers();
         updateDocumentTitle();
         if (peer === activePeer) { clearEmpty(); append(msg); }
+      });
+      socket.on("messages:read", payload => {
+        if (!payload || !state.user) return;
+        if (gid(payload.userId) !== gid(state.user.id)) return;
+        clearUnread(payload.chatWith);
+        renderUsers();
       });
       socket.on("conversation:cleared", payload => {
         if (!payload || !state.user || !state.active) return;
@@ -1481,8 +1632,9 @@
     function clearSession() {
       const chatStateKey = getChatStateStorageKey();
       state.token = ""; state.user = null; state.users = []; state.active = null;
-      state.incomingRequests = []; state.outgoingRequests = []; state.discoverUsers = []; state.friendCount = 0;
+      state.incomingRequests = []; state.outgoingRequests = []; state.discoverUsers = []; state.friendCount = 0; state.unreadMessageCount = 0;
       state.unread.clear(); state.activity.clear(); state.latestMessage.clear();
+      state.notifiedRequests.clear(); state.announcedUnreadByUser.clear();
       localStorage.removeItem("token"); localStorage.removeItem("user");
       localStorage.removeItem(chatStateKey);
       disconnect(); stopLoop(); stopIncomingSound();
