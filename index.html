@@ -729,9 +729,9 @@
             </div>
           </div>
           <div class="search-wrap">
-            <input id="searchInput" class="search-input" type="text" placeholder="Search logged-in users..." aria-label="Search logged-in users" />
+            <input id="searchInput" class="search-input" type="text" placeholder="Search all registered users..." aria-label="Search all registered users" />
             <div class="search-actions">
-              <button id="findFriendToggle" class="btn ghost" type="button">Find Friend</button>
+              <button id="findFriendToggle" class="btn ghost" type="button">Refresh Users</button>
             </div>
           </div>
           <div class="network-panel">
@@ -805,7 +805,7 @@
       friendCount: 0,
       unreadMessageCount: 0,
       searchQuery: "",
-      showFindFriends: false,
+      showFindFriends: true,
       active: null,
       ids: new Set(),
       unread: new Map(),
@@ -878,10 +878,10 @@
     const show = screen => { auth.classList.toggle("on", screen === "auth"); chat.classList.toggle("on", screen === "chat"); };
     const closeSide = () => { sidebar.classList.remove("open"); overlay.classList.remove("on"); };
     const openSide = () => { sidebar.classList.add("open"); overlay.classList.add("on"); };
-    const setFindFriendVisibility = (visible) => {
-      state.showFindFriends = Boolean(visible);
-      findFriendPanel.classList.toggle("hidden", !state.showFindFriends);
-      findFriendToggle.textContent = state.showFindFriends ? "Show Your Friends" : "Find Friend";
+    const setFindFriendVisibility = () => {
+      state.showFindFriends = true;
+      findFriendPanel.classList.remove("hidden");
+      findFriendToggle.textContent = "Refresh Users";
     };
     const stampActivity = (userId, when = Date.now()) => {
       const id = gid(userId);
@@ -1184,9 +1184,6 @@
     /* ── Search ── */
     searchInput.addEventListener("input", () => {
       state.searchQuery = searchInput.value.toLowerCase().trim();
-      if (state.searchQuery) {
-        setFindFriendVisibility(true);
-      }
       renderFindFriends();
     });
 
@@ -1354,7 +1351,7 @@
       }
 
       if (!state.incomingRequests.length) {
-        requestList.innerHTML = '<div class="empty" style="margin:0">No pending friend requests.</div>';
+        requestList.innerHTML = "";
         return;
       }
 
@@ -1383,17 +1380,16 @@
         return;
       }
 
-      findFriendPanel.classList.toggle("hidden", !state.showFindFriends);
-
       const query = state.searchQuery || "";
       const visibleUsers = state.discoverUsers.filter((user) => {
         if (!query) return true;
-        const text = `${user.username || ""} ${user.email || ""}`.toLowerCase();
-        return text.includes(query);
+        const username = String(user.username || "").toLowerCase();
+        const email = String(user.email || "").toLowerCase();
+        return username.startsWith(query) || email.startsWith(query);
       });
 
       if (!visibleUsers.length) {
-        findFriendList.innerHTML = `<div class="empty" style="margin:0">${query ? "No logged-in users match your search." : "No other logged-in users right now."}</div>`;
+        findFriendList.innerHTML = `<div class="empty" style="margin:0">${query ? "No users found for that starting letter." : "No registered users available right now."}</div>`;
         return;
       }
 
@@ -1404,7 +1400,7 @@
             ? "Already your friend"
           : user.relation === "incoming"
             ? "Requested you"
-            : `Online now • ${user.friendCount || 0} friend${(user.friendCount || 0) === 1 ? "" : "s"}`;
+            : `${user.isLoggedIn ? "Online now" : "Offline"} • ${user.friendCount || 0} friend${(user.friendCount || 0) === 1 ? "" : "s"}`;
         const isOutgoing = user.relation === "outgoing";
         const isFriend = user.relation === "friend";
         const addDisabled = user.relation === "incoming" || isFriend;
@@ -1567,7 +1563,7 @@
       state.users = d.friends || [];
       state.incomingRequests = d.incomingRequests || [];
       state.outgoingRequests = d.outgoingRequests || [];
-      state.discoverUsers = d.onlineUsers || [];
+      state.discoverUsers = d.allUsers || d.onlineUsers || [];
       state.friendCount = d.friendCount || 0;
       syncUnreadMessages(d.unreadMessagesByUser || {});
       const targetPeer = readRouteParams().get("peer");
@@ -1661,7 +1657,7 @@
     function clearSession() {
       const chatStateKey = getChatStateStorageKey();
       state.token = ""; state.user = null; state.users = []; state.active = null;
-      state.incomingRequests = []; state.outgoingRequests = []; state.discoverUsers = []; state.friendCount = 0; state.unreadMessageCount = 0; state.searchQuery = ""; state.showFindFriends = false;
+      state.incomingRequests = []; state.outgoingRequests = []; state.discoverUsers = []; state.friendCount = 0; state.unreadMessageCount = 0; state.searchQuery = ""; state.showFindFriends = true;
       state.unread.clear(); state.activity.clear(); state.latestMessage.clear();
       state.notifiedRequests.clear(); state.announcedUnreadByUser.clear();
       localStorage.removeItem("token"); localStorage.removeItem("user");
@@ -1669,7 +1665,7 @@
       disconnect(); stopLoop(); stopIncomingSound();
       updateDocumentTitle();
       searchInput.value = "";
-      setFindFriendVisibility(false);
+      setFindFriendVisibility(true);
       renderStats();
       renderRequests();
       renderFindFriends();
@@ -1835,8 +1831,7 @@
       a.addEventListener("click", e => { e.preventDefault(); go(a.dataset.link); })
     );
     findFriendToggle.addEventListener("click", () => {
-      setFindFriendVisibility(!state.showFindFriends);
-      renderFindFriends();
+      queueNetworkRefresh();
     });
     loginForm.addEventListener("submit", onLogin);
     registerForm.addEventListener("submit", onRegister);
@@ -1849,7 +1844,7 @@
     addEventListener("beforeunload", () => { disconnect(); stopLoop(); });
 
     /* ── Boot ── */
-    setFindFriendVisibility(false);
+    setFindFriendVisibility(true);
     hydrate();
     if (!location.hash && ["/login", "/register", "/chat", "/login.html", "/register.html", "/chatdashboard.html"].includes(location.pathname)) {
       history.replaceState({}, "", `/#${readRoute()}`);
