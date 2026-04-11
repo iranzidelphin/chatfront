@@ -804,6 +804,7 @@
     let backendWarmupPromise = null;
     let toastTimer = null;
     let networkRefreshTimer = null;
+    let networkRequestPromise = null;
     const defaultTitle = document.title;
     let audioContext = null;
     let soundTimer = null;
@@ -883,7 +884,23 @@
       networkRefreshTimer = setTimeout(() => {
         networkRefreshTimer = null;
         loadUsers().catch(() => {});
-      }, 150);
+      }, 40);
+    };
+    const updateDiscoverUser = (userId, updater) => {
+      const targetId = gid(userId);
+      state.discoverUsers = state.discoverUsers.map(user =>
+        gid(user._id) === targetId ? { ...user, ...updater(user) } : user
+      );
+    };
+    const removeIncomingRequest = (userId) => {
+      const targetId = gid(userId);
+      state.incomingRequests = state.incomingRequests.filter(user => gid(user._id) !== targetId);
+    };
+    const addFriendIfMissing = (user) => {
+      if (!user) return;
+      const targetId = gid(user._id);
+      if (state.users.some(friend => gid(friend._id) === targetId)) return;
+      state.users = [...state.users, { ...user, relation: "friend", canMessage: true }];
     };
     const showIncomingAlert = (username, text) => {
       if (!toastAlert) return;
@@ -1175,28 +1192,56 @@
 
     async function sendFriendRequestAction(targetUserId) {
       if (!state.user) return;
+      updateDiscoverUser(targetUserId, user => ({
+        ...user,
+        relation: "outgoing"
+      }));
+      renderFindFriends();
       try {
         await api("/api/users/friend-requests", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: gid(state.user.id), targetUserId: gid(targetUserId) })
         });
-        await loadUsers();
+        queueNetworkRefresh();
       } catch (err) {
+        updateDiscoverUser(targetUserId, user => ({
+          ...user,
+          relation: "none"
+        }));
+        renderFindFriends();
         alert(err.message || "Could not send friend request.");
       }
     }
 
     async function respondToRequestAction(requestUserId, action) {
       if (!state.user) return;
+      const requestUser = state.incomingRequests.find(user => gid(user._id) === gid(requestUserId)) || null;
+      removeIncomingRequest(requestUserId);
+      if (action === "accept" && requestUser) {
+        addFriendIfMissing(requestUser);
+        state.friendCount = (state.friendCount || 0) + 1;
+        state.discoverUsers = state.discoverUsers.filter(user => gid(user._id) !== gid(requestUserId));
+      } else {
+        updateDiscoverUser(requestUserId, user => ({
+          ...user,
+          relation: "none"
+        }));
+      }
+      renderStats();
+      renderRequests();
+      renderFindFriends();
+      renderUsers();
+      renderHeader();
       try {
         await api("/api/users/friend-requests/respond", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: gid(state.user.id), requestUserId: gid(requestUserId), action })
         });
-        await loadUsers();
+        queueNetworkRefresh();
       } catch (err) {
+        await loadUsers({ refreshMessages: false });
         alert(err.message || "Could not update friend request.");
       }
     }
@@ -1347,9 +1392,23 @@
       renderMessages(list);
     }
 
-    async function loadUsers() {
+    async function loadUsers(options = {}) {
       if (!state.user) return;
-      const d = await api(`/api/users/network?userId=${encodeURIComponent(gid(state.user.id))}`);
+      if (networkRequestPromise) {
+        return networkRequestPromise;
+      }
+
+      const { refreshMessages = false } = options;
+      const previousActiveId = state.active ? gid(state.active._id) : "";
+
+      let d;
+      try {
+        networkRequestPromise = api(`/api/users/network?userId=${encodeURIComponent(gid(state.user.id))}`);
+        d = await networkRequestPromise;
+      } finally {
+        networkRequestPromise = null;
+      }
+
       state.users = d.friends || [];
       state.incomingRequests = d.incomingRequests || [];
       state.outgoingRequests = d.outgoingRequests || [];
@@ -1363,13 +1422,15 @@
       if (!state.active && state.user) {
         state.active = state.users[0] || null;
       }
+      const nextActiveId = state.active ? gid(state.active._id) : "";
+      const activeChanged = previousActiveId !== nextActiveId;
       renderStats();
       renderRequests();
       renderFindFriends();
       renderUsers();
       renderHeader();
-      if (state.active) await loadMessages();
-      else renderMessages([]);
+      if (state.active && (refreshMessages || activeChanged)) await loadMessages();
+      else if (!state.active) renderMessages([]);
     }
 
     /* ── Socket.IO ── */
