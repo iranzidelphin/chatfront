@@ -275,6 +275,43 @@
       display:flex;flex-direction:column;
     }
     .users-label{flex-shrink:0;padding:14px 16px 8px}
+    .friend-stats{
+      flex-shrink:0;padding:14px 16px 10px;
+      border-bottom:1px solid var(--line);
+      display:grid;grid-template-columns:1fr 1fr;gap:10px;
+    }
+    .stat-card{
+      padding:12px;border-radius:14px;border:1px solid var(--line);
+      background:var(--tile-bg);
+    }
+    .stat-card strong{display:block;font-size:1.1rem}
+    .stat-card span{font-size:.78rem;color:var(--muted)}
+    .network-panel{
+      flex-shrink:0;padding:12px 16px;
+      border-bottom:1px solid var(--line);
+    }
+    .network-title{
+      font-size:.78rem;font-weight:800;color:var(--muted);
+      text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;
+    }
+    .mini-list{display:flex;flex-direction:column;gap:8px;max-height:180px;overflow:auto}
+    .network-card{
+      border:1px solid var(--line);border-radius:14px;
+      background:var(--input-bg);padding:11px 12px;
+    }
+    .network-card strong{display:block;font-size:.88rem}
+    .network-card p{
+      margin-top:5px;color:#f97316;font-size:.78rem;font-weight:700;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+    .small-btn{
+      border:1px solid var(--line);background:var(--app-bg2);color:var(--text);
+      border-radius:10px;padding:7px 10px;font-size:.75rem;font-weight:800;cursor:pointer;
+    }
+    .small-btn.primary-action{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;border-color:transparent}
+    .small-btn.danger-action{background:var(--danger-bg);color:var(--danger-text);border-color:var(--danger-border)}
+    .small-btn:disabled{opacity:.45;cursor:not-allowed}
     .users-scroll{
       flex:1;min-height:0;padding:0 16px 16px;
       overflow-y:auto;overflow-x:hidden;
@@ -673,11 +710,29 @@
               <span id="meEmail">Log in to start chatting</span>
             </div>
           </div>
+          <div class="friend-stats">
+            <div class="stat-card">
+              <strong id="friendCount">0</strong>
+              <span>Friends</span>
+            </div>
+            <div class="stat-card">
+              <strong id="requestCount">0</strong>
+              <span>Requests</span>
+            </div>
+          </div>
           <div class="search-wrap">
             <input id="searchInput" class="search-input" type="text" placeholder="Search users..." aria-label="Search users" />
           </div>
+          <div class="network-panel">
+            <p class="network-title">Requests</p>
+            <div id="requestList" class="mini-list scrollable"></div>
+          </div>
+          <div class="network-panel">
+            <p class="network-title">Find Friend</p>
+            <div id="findFriendList" class="mini-list scrollable"></div>
+          </div>
           <div class="users-wrap">
-            <div class="users-label"><p class="eyebrow">Users</p></div>
+            <div class="users-label"><p class="eyebrow">Friends</p></div>
             <div id="userList" class="users-scroll scrollable"></div>
           </div>
         </aside>
@@ -733,6 +788,10 @@
       user: null,
       token: localStorage.getItem("token") || "",
       users: [],
+      incomingRequests: [],
+      outgoingRequests: [],
+      discoverUsers: [],
+      friendCount: 0,
       active: null,
       ids: new Set(),
       unread: new Map(),
@@ -744,6 +803,7 @@
     let socket = null;
     let backendWarmupPromise = null;
     let toastTimer = null;
+    let networkRefreshTimer = null;
     const defaultTitle = document.title;
     let audioContext = null;
     let soundTimer = null;
@@ -757,6 +817,8 @@
     const loginMsg = $("loginMsg"), registerMsg = $("registerMsg");
     const statusEl = $("status"), meName = $("meName"), meEmail = $("meEmail");
     const userList = $("userList"), searchInput = $("searchInput");
+    const requestList = $("requestList"), findFriendList = $("findFriendList");
+    const friendCountEl = $("friendCount"), requestCountEl = $("requestCount");
     const chatTitle = $("chatTitle"), chatSub = $("chatSub");
     const messages = $("messages"), messageForm = $("messageForm");
     const messageInput = $("messageInput"), sendBtn = $("sendBtn");
@@ -814,6 +876,14 @@
       if (!id) return;
       state.unread.delete(id);
       updateDocumentTitle();
+    };
+    const queueNetworkRefresh = () => {
+      if (!state.user) return;
+      if (networkRefreshTimer) clearTimeout(networkRefreshTimer);
+      networkRefreshTimer = setTimeout(() => {
+        networkRefreshTimer = null;
+        loadUsers().catch(() => {});
+      }, 150);
     };
     const showIncomingAlert = (username, text) => {
       if (!toastAlert) return;
@@ -1025,9 +1095,9 @@
     /* ── Search ── */
     searchInput.addEventListener("input", () => {
       const q = searchInput.value.toLowerCase().trim();
-      userList.querySelectorAll(".user").forEach(btn => {
+      document.querySelectorAll(".user,.network-card").forEach(btn => {
         const name = (btn.querySelector("strong")?.textContent || "").toLowerCase();
-        const info = (btn.querySelector("span")?.textContent || "").toLowerCase();
+        const info = (btn.textContent || "").toLowerCase();
         btn.style.display = (!q || name.includes(q) || info.includes(q)) ? "" : "none";
       });
     });
@@ -1078,13 +1148,124 @@
     function renderHeader() {
       if (!state.active) {
         chatTitle.textContent = "Choose a conversation";
-        chatSub.textContent = "Pick a user to start chatting.";
+        chatSub.textContent = "Pick a friend to start chatting.";
         deleteBtn.style.display = "none";
         return;
       }
       chatTitle.textContent = `Chat with ${state.active.username}`;
       chatSub.textContent = state.active.isLoggedIn ? "Online now" : "Offline";
       deleteBtn.style.display = "";
+    }
+
+    function renderStats() {
+      friendCountEl.textContent = String(state.friendCount || 0);
+      requestCountEl.textContent = String((state.incomingRequests || []).length);
+    }
+
+    async function openConversationWith(userId) {
+      const friend = state.users.find(u => gid(u._id) === gid(userId)) || null;
+      if (!friend) return;
+      state.active = friend;
+      clearUnread(friend._id);
+      renderUsers();
+      renderHeader();
+      closeSide();
+      await loadMessages();
+    }
+
+    async function sendFriendRequestAction(targetUserId) {
+      if (!state.user) return;
+      try {
+        await api("/api/users/friend-requests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: gid(state.user.id), targetUserId: gid(targetUserId) })
+        });
+        await loadUsers();
+      } catch (err) {
+        alert(err.message || "Could not send friend request.");
+      }
+    }
+
+    async function respondToRequestAction(requestUserId, action) {
+      if (!state.user) return;
+      try {
+        await api("/api/users/friend-requests/respond", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: gid(state.user.id), requestUserId: gid(requestUserId), action })
+        });
+        await loadUsers();
+      } catch (err) {
+        alert(err.message || "Could not update friend request.");
+      }
+    }
+
+    function renderRequests() {
+      if (!state.user) {
+        requestList.innerHTML = "";
+        return;
+      }
+
+      if (!state.incomingRequests.length) {
+        requestList.innerHTML = '<div class="empty" style="margin:0">No pending friend requests.</div>';
+        return;
+      }
+
+      requestList.innerHTML = state.incomingRequests.map(user =>
+        `<div class="network-card" data-id="${gid(user._id)}">
+          <strong>${user.username}</strong>
+          <p>Sent you a friend request • ${user.friendCount || 0} friend${(user.friendCount || 0) === 1 ? "" : "s"}</p>
+          <div class="action-row">
+            <button class="small-btn primary-action" type="button" data-accept="${gid(user._id)}">Confirm</button>
+            <button class="small-btn danger-action" type="button" data-reject="${gid(user._id)}">Reject</button>
+          </div>
+        </div>`
+      ).join("");
+
+      requestList.querySelectorAll("[data-accept]").forEach(btn =>
+        btn.addEventListener("click", () => { respondToRequestAction(btn.dataset.accept, "accept"); })
+      );
+      requestList.querySelectorAll("[data-reject]").forEach(btn =>
+        btn.addEventListener("click", () => { respondToRequestAction(btn.dataset.reject, "reject"); })
+      );
+    }
+
+    function renderFindFriends() {
+      if (!state.user) {
+        findFriendList.innerHTML = "";
+        return;
+      }
+
+      if (!state.discoverUsers.length) {
+        findFriendList.innerHTML = '<div class="empty" style="margin:0">No other logged-in users to add right now.</div>';
+        return;
+      }
+
+      findFriendList.innerHTML = state.discoverUsers.map(user => {
+        const requestState = user.relation === "outgoing"
+          ? "Request sent"
+          : user.relation === "incoming"
+            ? "Requested you"
+            : `Online now • ${user.friendCount || 0} friend${(user.friendCount || 0) === 1 ? "" : "s"}`;
+        const addDisabled = user.relation === "outgoing" || user.relation === "incoming";
+
+        return `<div class="network-card" data-id="${gid(user._id)}">
+          <strong>${user.username}</strong>
+          <p>${requestState}</p>
+          <div class="action-row">
+            <button class="small-btn" type="button" data-message="${gid(user._id)}" ${user.canMessage ? "" : "disabled"}>Message</button>
+            <button class="small-btn primary-action" type="button" data-add="${gid(user._id)}" ${addDisabled ? "disabled" : ""}>Add Friend</button>
+          </div>
+        </div>`;
+      }).join("");
+
+      findFriendList.querySelectorAll("[data-message]").forEach(btn =>
+        btn.addEventListener("click", () => { if (!btn.disabled) openConversationWith(btn.dataset.message); })
+      );
+      findFriendList.querySelectorAll("[data-add]").forEach(btn =>
+        btn.addEventListener("click", () => { if (!btn.disabled) sendFriendRequestAction(btn.dataset.add); })
+      );
     }
 
     function renderUsers() {
@@ -1104,7 +1285,7 @@
           return String(a.username || "").localeCompare(String(b.username || ""));
         });
       if (!others.length) {
-        userList.innerHTML = '<div class="empty" style="margin:0">No other users are available yet.</div>';
+        userList.innerHTML = '<div class="empty" style="margin:0">No friends yet. Use Find Friend to add someone.</div>';
         return;
       }
       userList.innerHTML = others.map(u =>
@@ -1167,17 +1348,24 @@
     }
 
     async function loadUsers() {
-      const d = await api("/api/chat/online-users");
-      state.users = d.users || [];
+      if (!state.user) return;
+      const d = await api(`/api/users/network?userId=${encodeURIComponent(gid(state.user.id))}`);
+      state.users = d.friends || [];
+      state.incomingRequests = d.incomingRequests || [];
+      state.outgoingRequests = d.outgoingRequests || [];
+      state.discoverUsers = (d.onlineUsers || []).filter(user => user.relation !== "friend");
+      state.friendCount = d.friendCount || 0;
       const targetPeer = readRouteParams().get("peer");
       if (state.active) state.active = state.users.find(u => gid(u._id) === gid(state.active._id)) || null;
       if (targetPeer) {
         state.active = state.users.find(u => gid(u._id) === gid(targetPeer)) || state.active;
       }
       if (!state.active && state.user) {
-        const mine = gid(state.user.id);
-        state.active = state.users.find(u => gid(u._id) !== mine) || null;
+        state.active = state.users[0] || null;
       }
+      renderStats();
+      renderRequests();
+      renderFindFriends();
       renderUsers();
       renderHeader();
       if (state.active) await loadMessages();
@@ -1191,8 +1379,12 @@
       socket.on("connect", () => {
         socket.emit("user:join", { userId: gid(state.user.id) });
         setStatus("Connected to live chat");
+        queueNetworkRefresh();
       });
       socket.on("disconnect", () => setStatus("Reconnecting to live chat"));
+      socket.on("network:refresh", () => {
+        queueNetworkRefresh();
+      });
       socket.on("message:new", payload => {
         const msg = payload && payload.message;
         if (!msg || !state.user) return;
@@ -1228,11 +1420,15 @@
     function clearSession() {
       const chatStateKey = getChatStateStorageKey();
       state.token = ""; state.user = null; state.users = []; state.active = null;
+      state.incomingRequests = []; state.outgoingRequests = []; state.discoverUsers = []; state.friendCount = 0;
       state.unread.clear(); state.activity.clear(); state.latestMessage.clear();
       localStorage.removeItem("token"); localStorage.removeItem("user");
       localStorage.removeItem(chatStateKey);
       disconnect(); stopLoop(); stopIncomingSound();
       updateDocumentTitle();
+      renderStats();
+      renderRequests();
+      renderFindFriends();
       renderUsers(); renderMessages([]);
     }
 
