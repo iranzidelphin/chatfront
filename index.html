@@ -92,7 +92,7 @@
       transition:background .3s ease,border-color .3s ease;
       z-index:5;
     }
-    .brand{display:flex;align-items:center;gap:14px}
+    .brand{display:flex;align-items:center;gap:14px;min-width:0}
     .logo{
       width:48px;height:48px;border-radius:14px;
       display:grid;place-items:center;
@@ -103,7 +103,7 @@
     }
     .brand h1{font:800 1.4rem "Syne",sans-serif;letter-spacing:-.05em;line-height:1.1}
     .brand p{color:var(--muted);font-size:.88rem;margin-top:2px;transition:color .3s ease}
-    .top-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}
+    .top-actions{display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
     .status{
       padding:8px 14px;border-radius:999px;
       border:1px solid var(--line);
@@ -159,8 +159,27 @@
     }
     .settings-menu .theme-toggle-btn:hover{border-color:var(--accent)}
     .user-profile{display:flex;align-items:center;gap:10px;padding:6px 12px;border-radius:10px;border:1px solid var(--line);background:var(--input-bg)}
+    .user-profile.hidden{display:none}
     .user-profile-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-dark));display:grid;place-items:center;color:#fff;font-weight:800;font-size:.85rem}
     .user-profile-name{font-size:.85rem;font-weight:700;color:var(--text)}
+    .nav-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 24px;border-bottom:1px solid var(--line);background:var(--head-bg)}
+    .nav-bar.hidden{display:none}
+    .nav-icons{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .nav-icon-btn{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:var(--input-bg);color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s ease;white-space:nowrap}
+    .nav-icon-btn:hover{border-color:var(--line-hover);background:var(--accent-glow)}
+    .nav-icon-btn svg{width:16px;height:16px}
+    .nav-icon-btn.active{background:var(--accent-glow);border-color:var(--accent)}
+    .settings-dropdown{position:relative}
+    .settings-menu{position:absolute;top:calc(100% + 8px);right:0;z-index:20;min-width:180px;padding:8px;border-radius:14px;border:1px solid var(--line);background:var(--panel);box-shadow:var(--shadow);display:none;flex-direction:column;gap:4px}
+    .settings-menu.on{display:flex}
+    .settings-menu button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:none;border-radius:10px;background:transparent;color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer;text-align:left;transition:all .2s ease}
+    .settings-menu button:hover{background:var(--accent-glow)}
+    .settings-menu button.danger-setting{color:var(--danger-text)}
+    .settings-menu button.danger-setting:hover{background:var(--danger-bg)}
+    .theme-toggle{display:flex;align-items:center;gap:10px}
+    .theme-toggle span{flex:1}
+    .theme-toggle-btn{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--input-bg);cursor:pointer;transition:all .2s ease}
+    .theme-toggle-btn:hover{border-color:var(--accent)}
 
     /* ── Screens ── */
     .screen{display:none}
@@ -605,20 +624,24 @@
       .brand h1{font-size:1.1rem}
       .brand p{display:none}
       .top-actions{gap:6px}
-      .header-icons{gap:4px}
-      .header-icon-btn{padding:6px 8px;font-size:.72rem}
-      .header-icon-btn span{display:none}
-      .header-icon-btn svg{width:18px;height:18px}
       .user-profile{padding:4px 8px}
       .user-profile-name{display:none}
       .user-profile-avatar{width:28px;height:28px;font-size:.75rem}
+      .nav-bar{padding:10px 14px}
+      .nav-icons{width:100%;justify-content:flex-start}
+      .nav-icon-btn{padding:8px 12px;font-size:.78rem}
       .settings-menu{top:calc(100% + 4px)}
     }
     @media(max-width:640px){
       body{padding:6px}
       .app{height:calc(100vh - 12px);border-radius:18px}
-      .top{padding:14px 16px}
+      .top{padding:14px 16px;align-items:flex-start}
       .brand p{display:none}
+      .top-actions{width:100%;justify-content:space-between}
+      .status{font-size:.78rem;padding:7px 12px}
+      .nav-bar{padding:10px 16px}
+      .nav-icon-btn{font-size:.8rem}
+      .nav-icon-btn svg{display:none}
       .pane,.card{padding:18px}
       .card h3{font-size:1.45rem}
       .msgs{padding:16px 14px}
@@ -682,7 +705,6 @@
   <div id="overlay" class="overlay"></div>
   <div id="toastAlert" class="toast-alert" aria-live="polite"></div>
   <div class="app">
-    <!-- Fixed Header -->
     <header class="top">
       <div class="brand">
         <div class="logo">C</div>
@@ -691,22 +713,29 @@
           <p>DEVELOPED BY  <strong> Denko dev & Lummy dev </strong> </p>
         </div>
       </div>
-      <div class="header-icons">
-        <button id="yourFriendBtn" class="header-icon-btn" type="button" aria-label="Your Friends">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          <span>Your Friend</span>
-        </button>
-        <button id="findFriendBtn" class="header-icon-btn" type="button" aria-label="Find Friends">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-          <span>Find Friend</span>
-        </button>
-        <div class="user-profile">
+      <div class="top-actions">
+        <div id="headerProfile" class="user-profile hidden">
           <div class="user-profile-avatar" id="headerAvatar">?</div>
           <span class="user-profile-name" id="headerUserName">Guest</span>
         </div>
+        <button id="themeToggle" class="theme-btn" type="button" aria-label="Toggle light and dark mode"></button>
+        <div id="status" class="status">Ready</div>
+      </div>
+    </header>
+    <nav id="headerNav" class="nav-bar hidden" aria-label="User navigation">
+      <div class="nav-icons">
+        <button id="yourFriendBtn" class="nav-icon-btn" type="button" aria-label="Your Friends">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Your Friend</span>
+        </button>
+        <button id="findFriendBtn" class="nav-icon-btn" type="button" aria-label="Find Friends">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <span>Find Friend</span>
+        </button>
         <div class="settings-dropdown">
-          <button id="settingsBtn" class="theme-btn" type="button" aria-label="Settings" style="width:36px;height:36px">
+          <button id="settingsBtn" class="nav-icon-btn" type="button" aria-label="Settings">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>Settings</span>
           </button>
           <div id="settingsMenu" class="settings-menu">
             <button type="button" class="theme-toggle" id="menuThemeToggle">
@@ -718,10 +747,8 @@
             <button type="button" id="menuLogout" class="danger-setting">Logout</button>
           </div>
         </div>
-        <button id="themeToggle" class="theme-btn" type="button" aria-label="Toggle light and dark mode"></button>
-        <div id="status" class="status">Ready</div>
       </div>
-    </header>
+    </nav>
 
     <!-- Auth Screen -->
     <section id="auth" class="screen on">
@@ -901,7 +928,7 @@
   <script>
     /* ── Config ── */
     const BACKEND_URL = window.CHATEAZY_BACKEND_URL || (
-      window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+      window.location.protocol === "file:" || window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
         ? "http://localhost:3001"
         : "https://backendchat-nu8b.onrender.com"
     );
@@ -962,6 +989,8 @@
     const sidebar = $("sidebar"), toggleUsers = $("toggleUsers"), overlay = $("overlay");
     const themeToggle = $("themeToggle");
     const toastAlert = $("toastAlert");
+    const headerNav = $("headerNav");
+    const headerProfile = $("headerProfile");
     const yourFriendBtn = $("yourFriendBtn");
     const findFriendBtn = $("findFriendBtn");
     const settingsBtn = $("settingsBtn");
@@ -1018,6 +1047,12 @@
     const show = screen => { auth.classList.toggle("on", screen === "auth"); chat.classList.toggle("on", screen === "chat"); };
     const closeSide = () => { sidebar.classList.remove("open"); overlay.classList.remove("on"); };
     const openSide = () => { sidebar.classList.add("open"); overlay.classList.add("on"); };
+    const renderAuthNavigation = () => {
+      const isLoggedIn = Boolean(state.user && state.token);
+      headerNav.classList.toggle("hidden", !isLoggedIn);
+      headerProfile.classList.toggle("hidden", !isLoggedIn);
+      if (!isLoggedIn) settingsMenu.classList.remove("on");
+    };
     const setFindFriendVisibility = () => {
       state.showFindFriends = true;
       findFriendPanel.classList.remove("hidden");
@@ -1285,6 +1320,7 @@
       loginView.style.display = reg ? "none" : "block";
       registerView.style.display = reg ? "block" : "none";
       show("auth");
+      renderHeader();
       setStatus(reg ? "Create your account" : "Sign in to continue");
     };
 
@@ -1392,6 +1428,7 @@
 
     /* ── Render Functions ── */
     function renderHeader() {
+      renderAuthNavigation();
       if (!state.active) {
         chatTitle.textContent = "Choose a conversation";
         chatSub.textContent = "Pick a friend to start chatting.";
@@ -1932,6 +1969,7 @@
       friendSearchQuery = "";
       findFriendSearchQuery = "";
       showMainView();
+      renderHeader();
     }
 
     function hydrate() {
@@ -1945,6 +1983,7 @@
         if (headerUserName) headerUserName.textContent = state.user.username || "Guest";
         connect(); startLoop();
       }
+      renderHeader();
     }
 
     /* ── Event Handlers ── */
@@ -1969,6 +2008,7 @@
         meEmail.textContent = d.user.email || "";
         if (headerAvatar) headerAvatar.textContent = (d.user.username || "?").charAt(0).toUpperCase();
         if (headerUserName) headerUserName.textContent = d.user.username || "Guest";
+        renderHeader();
         setMsg(loginMsg, "Login successful. Opening chat...", "ok");
         connect(); startLoop(); go("/chat");
         await loadUsers();
