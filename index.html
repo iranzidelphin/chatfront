@@ -742,7 +742,6 @@
               <span>Theme</span>
               <span class="theme-toggle-btn" id="menuThemeBtn" aria-label="Toggle theme"></span>
             </button>
-            <button type="button" id="menuBackHome">Back to Home</button>
             <button type="button" id="menuDeleteChat">Delete Chat</button>
             <button type="button" id="menuLogout" class="danger-setting">Logout</button>
           </div>
@@ -997,7 +996,6 @@
     const settingsMenu = $("settingsMenu");
     const menuThemeToggle = $("menuThemeToggle");
     const menuThemeBtn = $("menuThemeBtn");
-    const menuBackHome = $("menuBackHome");
     const menuDeleteChat = $("menuDeleteChat");
     const menuLogout = $("menuLogout");
     const chatViewMain = $("chatViewMain");
@@ -2165,11 +2163,6 @@
     menuThemeBtn.addEventListener("click", () => {
       const current = document.documentElement.getAttribute("data-theme");
       setTheme(current === "dark" ? "light" : "dark");
-    });
-    menuBackHome.addEventListener("click", () => {
-      settingsMenu.classList.remove("on");
-      show("auth");
-      setStatus("Welcome to Chateazy");
     });
     menuDeleteChat.addEventListener("click", () => {
       settingsMenu.classList.remove("on");
