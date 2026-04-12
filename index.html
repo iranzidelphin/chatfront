@@ -120,11 +120,63 @@
     }
     .theme-btn:hover{border-color:var(--line-hover);background:var(--accent-glow)}
     .theme-btn svg{width:18px;height:18px}
+    .header-icons{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .header-icon-btn{
+      display:flex;align-items:center;gap:6px;
+      padding:8px 12px;border-radius:10px;
+      border:1px solid var(--line);background:var(--input-bg);
+      color:var(--text);font-size:.82rem;font-weight:600;cursor:pointer;
+      transition:all .2s ease;white-space:nowrap;
+    }
+    .header-icon-btn:hover{border-color:var(--line-hover);background:var(--accent-glow)}
+    .header-icon-btn svg{width:16px;height:16px}
+    .header-icon-btn.active{background:var(--accent-glow);border-color:var(--accent)}
+    .settings-dropdown{position:relative}
+    .settings-menu{
+      position:absolute;top:calc(100% + 8px);right:0;z-index:20;
+      min-width:180px;padding:8px;
+      border-radius:14px;border:1px solid var(--line);
+      background:var(--panel);box-shadow:var(--shadow);
+      display:none;flex-direction:column;gap:4px;
+    }
+    .settings-menu.on{display:flex}
+    .settings-menu button{
+      display:flex;align-items:center;gap:10px;
+      width:100%;padding:10px 12px;border:none;border-radius:10px;
+      background:transparent;color:var(--text);font-size:.85rem;font-weight:600;
+      cursor:pointer;text-align:left;transition:all .2s ease;
+    }
+    .settings-menu button:hover{background:var(--accent-glow)}
+    .settings-menu button.danger-setting{color:var(--danger-text)}
+    .settings-menu button.danger-setting:hover{background:var(--danger-bg)}
+    .settings-menu .theme-toggle{display:flex;align-items:center;gap:10px}
+    .settings-menu .theme-toggle span{flex:1}
+    .settings-menu .theme-toggle-btn{
+      display:flex;align-items:center;justify-content:center;
+      width:36px;height:36px;border-radius:10px;
+      border:1px solid var(--line);background:var(--input-bg);
+      cursor:pointer;transition:all .2s ease;
+    }
+    .settings-menu .theme-toggle-btn:hover{border-color:var(--accent)}
+    .user-profile{display:flex;align-items:center;gap:10px;padding:6px 12px;border-radius:10px;border:1px solid var(--line);background:var(--input-bg)}
+    .user-profile-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-dark));display:grid;place-items:center;color:#fff;font-weight:800;font-size:.85rem}
+    .user-profile-name{font-size:.85rem;font-weight:700;color:var(--text)}
 
     /* ── Screens ── */
     .screen{display:none}
     #auth.on{display:flex;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden}
     #chat.on{display:flex;flex:1;min-height:0;overflow:hidden}
+    .chat-view-container{height:100%;display:flex;flex-direction:column}
+    .chat-view-main{flex:1;display:none;flex-direction:column;min-height:0}
+    .chat-view-main.on{display:flex}
+    .chat-view-friends{flex:1;display:none;flex-direction:column;min-height:0}
+    .chat-view-friends.on{display:flex}
+    .friend-list-search{padding:14px 16px;border-bottom:1px solid var(--line)}
+    .friend-list-search .search-input{width:100%;padding:10px 12px 10px 36px;font-size:.86rem;border-radius:10px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='M11 11l3.5 3.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:11px center}
+    .friend-list-header{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+    .friend-list-header h3{font-size:.9rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+    .friend-list-header button{font-size:.8rem;padding:6px 10px}
+    .empty-state{margin:auto;max-width:30ch;text-align:center;color:var(--muted);line-height:1.7;font-size:.93rem}
 
     /* ── Scrollbar Styles ── */
     .scrollable{
@@ -549,6 +601,18 @@
         width:24px;
         height:24px;
       }
+      .top{padding:12px 14px;gap:8px}
+      .brand h1{font-size:1.1rem}
+      .brand p{display:none}
+      .top-actions{gap:6px}
+      .header-icons{gap:4px}
+      .header-icon-btn{padding:6px 8px;font-size:.72rem}
+      .header-icon-btn span{display:none}
+      .header-icon-btn svg{width:18px;height:18px}
+      .user-profile{padding:4px 8px}
+      .user-profile-name{display:none}
+      .user-profile-avatar{width:28px;height:28px;font-size:.75rem}
+      .settings-menu{top:calc(100% + 4px)}
     }
     @media(max-width:640px){
       body{padding:6px}
@@ -627,7 +691,33 @@
           <p>DEVELOPED BY  <strong> Denko dev & Lummy dev </strong> </p>
         </div>
       </div>
-      <div class="top-actions">
+      <div class="header-icons">
+        <button id="yourFriendBtn" class="header-icon-btn" type="button" aria-label="Your Friends">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Your Friend</span>
+        </button>
+        <button id="findFriendBtn" class="header-icon-btn" type="button" aria-label="Find Friends">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <span>Find Friend</span>
+        </button>
+        <div class="user-profile">
+          <div class="user-profile-avatar" id="headerAvatar">?</div>
+          <span class="user-profile-name" id="headerUserName">Guest</span>
+        </div>
+        <div class="settings-dropdown">
+          <button id="settingsBtn" class="theme-btn" type="button" aria-label="Settings" style="width:36px;height:36px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+          <div id="settingsMenu" class="settings-menu">
+            <button type="button" class="theme-toggle" id="menuThemeToggle">
+              <span>Theme</span>
+              <span class="theme-toggle-btn" id="menuThemeBtn" aria-label="Toggle theme"></span>
+            </button>
+            <button type="button" id="menuBackHome">Back to Home</button>
+            <button type="button" id="menuDeleteChat">Delete Chat</button>
+            <button type="button" id="menuLogout" class="danger-setting">Logout</button>
+          </div>
+        </div>
         <button id="themeToggle" class="theme-btn" type="button" aria-label="Toggle light and dark mode"></button>
         <div id="status" class="status">Ready</div>
       </div>
@@ -728,12 +818,6 @@
               <span>Requests</span>
             </div>
           </div>
-          <div class="search-wrap">
-            <input id="searchInput" class="search-input" type="text" placeholder="Search all registered users..." aria-label="Search all registered users" />
-            <div class="search-actions">
-              <button id="findFriendToggle" class="btn ghost" type="button">Refresh Users</button>
-            </div>
-          </div>
           <div class="network-panel">
             <p class="network-title">Requests</p>
             <div id="requestList" class="mini-list scrollable"></div>
@@ -748,33 +832,66 @@
           </div>
         </aside>
 
-        <!-- Main Chat -->
+        <!-- Main Chat Views -->
         <div class="mainchat">
-          <div class="head">
-            <div class="head-info">
-              <strong id="chatTitle">Choose a conversation</strong>
-              <span id="chatSub">Pick an online user to start chatting.</span>
+          <!-- Main Messages View -->
+          <div id="chatViewMain" class="chat-view-main on">
+            <div class="head">
+              <div class="head-info">
+                <strong id="chatTitle">Choose a conversation</strong>
+                <span id="chatSub">Pick an online user to start chatting.</span>
+              </div>
+              <div class="acts">
+                <button id="toggleUsers" class="btn ghost toggle" type="button" aria-label="Open users panel">Users</button>
+                <button id="deleteBtn" class="btn danger" type="button" style="display:none">Delete Chat</button>
+              </div>
             </div>
-            <div class="acts">
+            <div id="messages" class="msgs scrollable">
+              <div class="empty">Select a user from the list to begin chatting.</div>
+            </div>
+            <form id="messageForm" class="compose">
+              <input id="messageInput" type="text" maxlength="500" placeholder="Type a message..." required />
+              <button id="sendBtn" class="send-arrow" type="submit" aria-label="Send message">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M5.011 3.002L21 12.006 5.011 20.998 5 13.004 16.003 12.006 5 10.998Z" fill="white"/>
+                </svg>
+              </button>
+            </form>
+          </div>
           
-              <button id="toggleUsers" class="btn ghost toggle" type="button" aria-label="Open users panel">Users</button>
-            
-               <button id="deleteBtn" class="btn danger" type="button" style="display:none">Delete Chat</button> 
-
-              <button id="logoutBtn" class="btn ghost" type="button">Logout</button>
+          <!-- Your Friends List View -->
+          <div id="chatViewFriends" class="chat-view-friends">
+            <div class="head">
+              <div class="head-info">
+                <strong>Your Friends</strong>
+                <span>Select a friend to start chatting</span>
+              </div>
+              <div class="acts">
+                <button id="backFromFriends" class="btn ghost" type="button">Back</button>
+              </div>
             </div>
+            <div class="friend-list-search">
+              <input id="friendSearchInput" class="search-input" type="text" placeholder="Search your friends..." aria-label="Search your friends" />
+            </div>
+            <div id="friendsListView" class="users-scroll scrollable"></div>
           </div>
-          <div id="messages" class="msgs scrollable">
-            <div class="empty">Select a user from the list to begin chatting.</div>
+
+          <!-- Find Friend View -->
+          <div id="chatViewFindFriend" class="chat-view-friends">
+            <div class="head">
+              <div class="head-info">
+                <strong>Find Friend</strong>
+                <span>Discover and connect with users</span>
+              </div>
+              <div class="acts">
+                <button id="backFromFindFriend" class="btn ghost" type="button">Back</button>
+              </div>
+            </div>
+            <div class="friend-list-search">
+              <input id="findFriendSearchInput" class="search-input" type="text" placeholder="Search by username or email..." aria-label="Search users" />
+            </div>
+            <div id="findFriendListView" class="users-scroll scrollable"></div>
           </div>
-          <form id="messageForm" class="compose">
-            <input id="messageInput" type="text" maxlength="500" placeholder="Type a message..." required />
-            <button id="sendBtn" class="send-arrow" type="submit" aria-label="Send message">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M5.011 3.002L21 12.006 5.011 20.998 5 13.004 16.003 12.006 5 10.998Z" fill="white"/>
-              </svg>
-            </button>
-          </form>
         </div>
       </div>
     </section>
@@ -814,7 +931,8 @@
       timer: null,
       pending: 0,
       notifiedRequests: new Set(),
-      announcedUnreadByUser: new Map()
+      announcedUnreadByUser: new Map(),
+      currentView: "main"
     };
     let socket = null;
     let backendWarmupPromise = null;
@@ -844,6 +962,28 @@
     const sidebar = $("sidebar"), toggleUsers = $("toggleUsers"), overlay = $("overlay");
     const themeToggle = $("themeToggle");
     const toastAlert = $("toastAlert");
+    const yourFriendBtn = $("yourFriendBtn");
+    const findFriendBtn = $("findFriendBtn");
+    const settingsBtn = $("settingsBtn");
+    const settingsMenu = $("settingsMenu");
+    const menuThemeToggle = $("menuThemeToggle");
+    const menuThemeBtn = $("menuThemeBtn");
+    const menuBackHome = $("menuBackHome");
+    const menuDeleteChat = $("menuDeleteChat");
+    const menuLogout = $("menuLogout");
+    const chatViewMain = $("chatViewMain");
+    const chatViewFriends = $("chatViewFriends");
+    const chatViewFindFriend = $("chatViewFindFriend");
+    const backFromFriends = $("backFromFriends");
+    const backFromFindFriend = $("backFromFindFriend");
+    const friendSearchInput = $("friendSearchInput");
+    const findFriendSearchInput = $("findFriendSearchInput");
+    const friendsListView = $("friendsListView");
+    const findFriendListView = $("findFriendListView");
+    const headerAvatar = $("headerAvatar");
+    const headerUserName = $("headerUserName");
+    let friendSearchQuery = "";
+    let findFriendSearchQuery = "";
 
     /* ── UI Helpers ── */
     const setStatus = t => statusEl.textContent = t;
@@ -883,6 +1023,22 @@
       findFriendPanel.classList.remove("hidden");
       findFriendToggle.textContent = "Refresh Users";
     };
+    const showChatView = (viewName) => {
+      state.currentView = viewName;
+      chatViewMain.classList.toggle("on", viewName === "main");
+      chatViewFriends.classList.toggle("on", viewName === "friends");
+      chatViewFindFriend.classList.toggle("on", viewName === "findfriend");
+      yourFriendBtn.classList.toggle("active", viewName === "friends");
+      findFriendBtn.classList.toggle("active", viewName === "findfriend");
+      if (viewName === "friends") {
+        renderFriendsListView();
+      } else if (viewName === "findfriend") {
+        renderFindFriendListView();
+      }
+    };
+    const showMainView = () => showChatView("main");
+    const showYourFriendsView = () => showChatView("friends");
+    const showFindFriendView = () => showChatView("findfriend");
     const stampActivity = (userId, when = Date.now()) => {
       const id = gid(userId);
       if (!id) return;
@@ -1149,12 +1305,17 @@
     /* ── Theme (Light is default) ── */
     const sunIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
     const moonIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+    const menuSunIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+    const menuMoonIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
 
     function setTheme(theme) {
       document.documentElement.setAttribute("data-theme", theme);
       localStorage.setItem("chateazy-theme", theme);
       themeToggle.innerHTML = theme === "dark" ? sunIcon : moonIcon;
       themeToggle.setAttribute("aria-label", theme === "dark" ? "Switch to light mode" : "Switch to dark mode");
+      if (menuThemeBtn) {
+        menuThemeBtn.innerHTML = theme === "dark" ? menuSunIcon : menuMoonIcon;
+      }
     }
 
     /* Default to light mode */
@@ -1463,6 +1624,7 @@
           state.active = others.find(u => gid(u._id) === btn.dataset.id) || null;
           if (state.active) clearUnread(state.active._id);
           stopIncomingSound();
+          showMainView();
           renderUsers();
           renderHeader();
           closeSide();
@@ -1470,6 +1632,97 @@
         })
       );
 
+    }
+
+    function renderFriendsListView() {
+      if (!state.user) { friendsListView.innerHTML = ""; return; }
+      const mine = gid(state.user.id);
+      const query = friendSearchQuery || "";
+      let others = state.users
+        .filter(u => gid(u._id) !== mine);
+      if (query) {
+        others = others.filter(u => {
+          const username = String(u.username || "").toLowerCase();
+          return username.includes(query);
+        });
+      }
+      if (!others.length) {
+        friendsListView.innerHTML = '<div class="empty" style="margin:0">' + (query ? "No friends found matching your search." : "No friends yet. Find friends to add!") + '</div>';
+        return;
+      }
+      others.sort((a, b) => String(a.username || "").localeCompare(String(b.username || "")));
+      friendsListView.innerHTML = others.map(u =>
+        `<button class="user${state.active && gid(state.active._id) === gid(u._id) ? " active" : ""}" type="button" data-id="${gid(u._id)}">
+          <div class="userline"><span class="dot ${u.isLoggedIn ? "online" : "offline"}"></span><strong>${u.username}</strong>${getUnread(u._id) ? `<span class="badge">${getUnread(u._id)}</span>` : ""}</div>
+          <span class="user-preview">${u.isLoggedIn ? "Online now" : "Offline"}</span>
+        </button>`
+      ).join("");
+
+      friendsListView.querySelectorAll("[data-id]").forEach(btn =>
+        btn.addEventListener("click", async () => {
+          state.active = others.find(u => gid(u._id) === btn.dataset.id) || null;
+          if (state.active) clearUnread(state.active._id);
+          stopIncomingSound();
+          showMainView();
+          renderUsers();
+          renderHeader();
+          closeSide();
+          await loadMessages();
+        })
+      );
+    }
+
+    function renderFindFriendListView() {
+      if (!state.user) { findFriendListView.innerHTML = ""; return; }
+      const query = findFriendSearchQuery || "";
+      let visibleUsers = state.discoverUsers.filter((user) => {
+        if (!query) return true;
+        const username = String(user.username || "").toLowerCase();
+        const email = String(user.email || "").toLowerCase();
+        return username.includes(query) || email.includes(query);
+      });
+
+      if (!visibleUsers.length) {
+        findFriendListView.innerHTML = '<div class="empty" style="margin:0">' + (query ? "No users found for that search." : "No registered users available right now.") + '</div>';
+        return;
+      }
+
+      findFriendListView.innerHTML = visibleUsers.map(user => {
+        const requestState = user.relation === "outgoing"
+          ? "Request sent"
+          : user.relation === "friend"
+            ? "Already your friend"
+          : user.relation === "incoming"
+            ? "Requested you"
+            : `${user.isLoggedIn ? "Online now" : "Offline"} • ${user.friendCount || 0} friend${(user.friendCount || 0) === 1 ? "" : "s"}`;
+        const isOutgoing = user.relation === "outgoing";
+        const isFriend = user.relation === "friend";
+        const addDisabled = user.relation === "incoming" || isFriend;
+        const addLabel = isFriend ? "Friend" : isOutgoing ? "Cancel" : "Add";
+
+        return `<div class="network-card" data-id="${gid(user._id)}">
+          <strong>${user.username}</strong>
+          <p>${requestState}</p>
+          <div class="action-row">
+            <button class="small-btn" type="button" data-message="${gid(user._id)}" ${user.canMessage ? "" : "disabled"}>Message</button>
+            <button class="small-btn primary-action" type="button" data-add="${gid(user._id)}" data-relation="${user.relation}" ${addDisabled ? "disabled" : ""}>${addLabel}</button>
+          </div>
+        </div>`;
+      }).join("");
+
+      findFriendListView.querySelectorAll("[data-message]").forEach(btn =>
+        btn.addEventListener("click", () => { if (!btn.disabled) openConversationWith(btn.dataset.message); })
+      );
+      findFriendListView.querySelectorAll("[data-add]").forEach(btn =>
+        btn.addEventListener("click", () => {
+          if (btn.disabled) return;
+          if (btn.dataset.relation === "outgoing") {
+            cancelFriendRequestAction(btn.dataset.add);
+            return;
+          }
+          sendFriendRequestAction(btn.dataset.add);
+        })
+      );
     }
 
     function append(msg) {
@@ -1580,6 +1833,8 @@
       renderRequests();
       renderFindFriends();
       renderUsers();
+      renderFriendsListView();
+      renderFindFriendListView();
       renderHeader();
       announceNetworkNotifications();
       if (state.active && (refreshMessages || activeChanged)) await loadMessages();
@@ -1670,6 +1925,13 @@
       renderRequests();
       renderFindFriends();
       renderUsers(); renderMessages([]);
+      if (headerAvatar) headerAvatar.textContent = "?";
+      if (headerUserName) headerUserName.textContent = "Guest";
+      if (friendSearchInput) friendSearchInput.value = "";
+      if (findFriendSearchInput) findFriendSearchInput.value = "";
+      friendSearchQuery = "";
+      findFriendSearchQuery = "";
+      showMainView();
     }
 
     function hydrate() {
@@ -1679,6 +1941,8 @@
         restoreChatState();
         meName.textContent = state.user.username || "Unknown user";
         meEmail.textContent = state.user.email || "";
+        if (headerAvatar) headerAvatar.textContent = (state.user.username || "?").charAt(0).toUpperCase();
+        if (headerUserName) headerUserName.textContent = state.user.username || "Guest";
         connect(); startLoop();
       }
     }
@@ -1703,6 +1967,8 @@
         state.user = d.user; state.token = d.token;
         meName.textContent = d.user.username || "Unknown user";
         meEmail.textContent = d.user.email || "";
+        if (headerAvatar) headerAvatar.textContent = (d.user.username || "?").charAt(0).toUpperCase();
+        if (headerUserName) headerUserName.textContent = d.user.username || "Guest";
         setMsg(loginMsg, "Login successful. Opening chat...", "ok");
         connect(); startLoop(); go("/chat");
         await loadUsers();
@@ -1832,6 +2098,60 @@
     );
     findFriendToggle.addEventListener("click", () => {
       queueNetworkRefresh();
+    });
+    yourFriendBtn.addEventListener("click", () => {
+      showYourFriendsView();
+    });
+    findFriendBtn.addEventListener("click", () => {
+      showFindFriendView();
+    });
+    settingsBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      settingsMenu.classList.toggle("on");
+    });
+    document.addEventListener("click", (e) => {
+      if (!settingsMenu.contains(e.target) && e.target !== settingsBtn) {
+        settingsMenu.classList.remove("on");
+      }
+    });
+    menuThemeToggle.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme");
+      setTheme(current === "dark" ? "light" : "dark");
+    });
+    menuThemeBtn.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme");
+      setTheme(current === "dark" ? "light" : "dark");
+    });
+    menuBackHome.addEventListener("click", () => {
+      settingsMenu.classList.remove("on");
+      show("auth");
+      setStatus("Welcome to Chateazy");
+    });
+    menuDeleteChat.addEventListener("click", () => {
+      settingsMenu.classList.remove("on");
+      if (state.active) {
+        onDelete();
+      } else {
+        alert("Please select a conversation first.");
+      }
+    });
+    menuLogout.addEventListener("click", () => {
+      settingsMenu.classList.remove("on");
+      onLogout();
+    });
+    backFromFriends.addEventListener("click", () => {
+      showMainView();
+    });
+    backFromFindFriend.addEventListener("click", () => {
+      showMainView();
+    });
+    friendSearchInput.addEventListener("input", () => {
+      friendSearchQuery = friendSearchInput.value.toLowerCase().trim();
+      renderFriendsListView();
+    });
+    findFriendSearchInput.addEventListener("input", () => {
+      findFriendSearchQuery = findFriendSearchInput.value.toLowerCase().trim();
+      renderFindFriendListView();
     });
     loginForm.addEventListener("submit", onLogin);
     registerForm.addEventListener("submit", onRegister);
