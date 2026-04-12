@@ -521,6 +521,74 @@
     }
     .bubble.pending{opacity:.7}
     .meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;font-size:.72rem;font-weight:700;opacity:.65}
+    .reply-preview{
+      margin-bottom:8px;
+      padding:8px 10px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.06);
+      font-size:.78rem;
+      line-height:1.45;
+    }
+    .reply-preview strong{display:block;margin-bottom:3px}
+    .message-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    .message-action-btn{
+      border:1px solid var(--line);
+      background:transparent;
+      color:inherit;
+      border-radius:999px;
+      padding:5px 10px;
+      font-size:.72rem;
+      font-weight:800;
+      cursor:pointer;
+      opacity:.85;
+    }
+    .message-action-btn:hover{opacity:1;border-color:var(--accent)}
+    .compose-tools{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      flex:1;
+      min-width:0;
+    }
+    .compose-context{
+      display:none;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:var(--input-bg);
+    }
+    .compose-context.on{display:flex}
+    .compose-context-text{min-width:0}
+    .compose-context-text strong{display:block;font-size:.8rem;margin-bottom:4px}
+    .compose-context-text span{
+      display:block;
+      font-size:.78rem;
+      color:var(--muted);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:100%;
+    }
+    .compose-context button{
+      flex-shrink:0;
+      border:1px solid var(--line);
+      background:transparent;
+      color:var(--text);
+      border-radius:10px;
+      padding:8px 10px;
+      font-size:.75rem;
+      font-weight:800;
+      cursor:pointer;
+    }
 
     /* ── Compose ── */
     .compose{
@@ -799,7 +867,6 @@
               <span>Theme</span>
               <span class="theme-toggle-btn" id="menuThemeBtn" aria-label="Toggle theme"></span>
             </button>
-            <button type="button" id="menuDeleteChat">Delete Chat</button>
             <button type="button" id="menuLogout" class="danger-setting">Logout</button>
           </div>
         </div>
@@ -930,14 +997,22 @@
               </div>
               <div class="acts">
                 <button id="toggleUsers" class="btn ghost toggle" type="button" aria-label="Open users panel">Users</button>
-                <button id="deleteBtn" class="btn danger" type="button" style="display:none">Delete Chat</button>
               </div>
             </div>
             <div id="messages" class="msgs scrollable">
               <div class="empty">Select a user from the list to begin chatting.</div>
             </div>
             <form id="messageForm" class="compose">
-              <input id="messageInput" type="text" maxlength="500" placeholder="Type a message..." required />
+              <div class="compose-tools">
+                <div id="composeContext" class="compose-context">
+                  <div class="compose-context-text">
+                    <strong id="composeContextTitle">Replying</strong>
+                    <span id="composeContextPreview"></span>
+                  </div>
+                  <button id="composeContextCancel" type="button">Cancel</button>
+                </div>
+                <input id="messageInput" type="text" maxlength="500" placeholder="Type a message..." required />
+              </div>
               <button id="sendBtn" class="send-arrow" type="submit" aria-label="Send message">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M5.011 3.002L21 12.006 5.011 20.998 5 13.004 16.003 12.006 5 10.998Z" fill="white"/>
@@ -1051,7 +1126,10 @@
       announcedUnreadByUser: new Map(),
       currentView: "main",
       typingPeerId: "",
-      isTyping: false
+      isTyping: false,
+      currentMessages: [],
+      replyTo: null,
+      editingMessageId: ""
     };
     let socket = null;
     let backendWarmupPromise = null;
@@ -1078,8 +1156,12 @@
     const chatTitle = $("chatTitle"), chatSub = $("chatSub");
     const typingIndicator = $("typingIndicator");
     const messages = $("messages"), messageForm = $("messageForm");
+    const composeContext = $("composeContext");
+    const composeContextTitle = $("composeContextTitle");
+    const composeContextPreview = $("composeContextPreview");
+    const composeContextCancel = $("composeContextCancel");
     const messageInput = $("messageInput"), sendBtn = $("sendBtn");
-    const deleteBtn = $("deleteBtn"), logoutBtn = $("logoutBtn");
+    const logoutBtn = $("logoutBtn");
     const sidebar = $("sidebar"), toggleUsers = $("toggleUsers"), overlay = $("overlay");
     const sidebarBackBtn = $("sidebarBackBtn");
     const themeToggle = $("themeToggle");
@@ -1092,7 +1174,6 @@
     const settingsMenu = $("settingsMenu");
     const menuThemeToggle = $("menuThemeToggle");
     const menuThemeBtn = $("menuThemeBtn");
-    const menuDeleteChat = $("menuDeleteChat");
     const menuLogout = $("menuLogout");
     const chatViewMain = $("chatViewMain");
     const chatViewFriends = $("chatViewFriends");
@@ -1119,6 +1200,10 @@
     const setStatus = t => statusEl.textContent = t;
     const setMsg = (el, text, type) => { el.textContent = text || ""; el.className = text ? `msg ${type}` : "msg"; };
     const setLoading = (btn, on, busy, idle) => { btn.disabled = on; btn.textContent = on ? busy : idle; };
+    const truncateText = (text, max = 70) => {
+      const value = String(text || "").trim();
+      return value.length > max ? `${value.slice(0, max - 1)}…` : value;
+    };
     const empty = t => messages.innerHTML = `<div class="empty">${t}</div>`;
     const clearEmpty = () => { const el = messages.querySelector(".empty"); if (el) el.remove(); };
     const readUser = () => { try { return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; } };
@@ -1148,6 +1233,34 @@
     const show = screen => { auth.classList.toggle("on", screen === "auth"); chat.classList.toggle("on", screen === "chat"); };
     const closeSide = () => { sidebar.classList.remove("open"); overlay.classList.remove("on"); };
     const openSide = () => { sidebar.classList.add("open"); overlay.classList.add("on"); };
+    const resetComposerContext = ({ keepInput = false } = {}) => {
+      state.replyTo = null;
+      state.editingMessageId = "";
+      composeContext.classList.remove("on");
+      composeContextTitle.textContent = "Replying";
+      composeContextPreview.textContent = "";
+      messageForm.dataset.mode = "send";
+      if (!keepInput) messageInput.value = "";
+    };
+    const setReplyContext = message => {
+      state.replyTo = message;
+      state.editingMessageId = "";
+      composeContextTitle.textContent = `Replying to ${message.sender?.username || "message"}`;
+      composeContextPreview.textContent = truncateText(message.text);
+      composeContext.classList.add("on");
+      messageForm.dataset.mode = "reply";
+      messageInput.focus();
+    };
+    const setEditContext = message => {
+      state.editingMessageId = gid(message._id);
+      state.replyTo = null;
+      composeContextTitle.textContent = "Editing message";
+      composeContextPreview.textContent = truncateText(message.text);
+      composeContext.classList.add("on");
+      messageForm.dataset.mode = "edit";
+      messageInput.value = message.text || "";
+      messageInput.focus();
+    };
     const renderAuthNavigation = () => {
       const isLoggedIn = Boolean(state.user && state.token);
       headerNav.classList.toggle("hidden", !isLoggedIn);
@@ -1597,12 +1710,10 @@
       if (!state.active) {
         chatTitle.textContent = "Choose a conversation";
         chatSub.textContent = "Pick a friend to start chatting.";
-        deleteBtn.style.display = "none";
         return;
       }
       chatTitle.textContent = `Chat with ${state.active.username}`;
       chatSub.textContent = state.active.isLoggedIn ? "Online now" : "Offline";
-      deleteBtn.style.display = "";
     }
 
     function renderStats() {
@@ -1617,6 +1728,7 @@
       if (!friend) return;
       state.active = friend;
       state.typingPeerId = "";
+      resetComposerContext();
       clearUnread(friend._id);
       renderUsers();
       renderHeader();
@@ -1782,7 +1894,7 @@
       );
     }
 
-    function renderFindFriends() {
+function renderFindFriends() {
       if (!state.user) {
         findFriendList.innerHTML = "";
         return;
@@ -1972,6 +2084,20 @@
       );
     }
 
+    function findCurrentMessage(messageId) {
+      return state.currentMessages.find(message => gid(message._id) === gid(messageId)) || null;
+    }
+
+    function buildMessageActions(msg, mine) {
+      if (msg.pending) return "";
+      const actions = ['<button class="message-action-btn" type="button" data-reply-message="' + gid(msg._id) + '">Reply</button>'];
+      if (mine) {
+        actions.push('<button class="message-action-btn" type="button" data-edit-message="' + gid(msg._id) + '">Edit</button>');
+        actions.push('<button class="message-action-btn" type="button" data-delete-message="' + gid(msg._id) + '">Delete</button>');
+      }
+      return `<div class="message-actions">${actions.join("")}</div>`;
+    }
+
     function append(msg) {
       const id = msg && msg._id ? gid(msg._id) : "";
       if (id && state.ids.has(id)) return;
@@ -1981,19 +2107,25 @@
       const box = document.createElement("div");
       box.className = `bubble ${mine ? "me" : "other"}${msg.pending ? " pending" : ""}`;
       if (msg.localId) box.dataset.localId = msg.localId;
+      if (id) box.dataset.messageId = id;
       const who = msg.sender && msg.sender.username ? msg.sender.username : "Unknown";
       const time = new Date(msg.createdAt || Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-      box.innerHTML = `<div class="meta"><span>${who}</span><span>${time}</span>${msg.pending ? "<span>Sending...</span>" : ""}</div><div>${msg.text}</div>`;
+      const edited = msg.editedAt ? "<span>Edited</span>" : "";
+      const replyPreview = msg.replyTo
+        ? `<div class="reply-preview"><strong>${msg.replyTo.sender?.username || "Reply"}</strong><span>${truncateText(msg.replyTo.text)}</span></div>`
+        : "";
+      box.innerHTML = `<div class="meta"><span>${who}</span><span>${time}</span>${edited}${msg.pending ? "<span>Sending...</span>" : ""}</div>${replyPreview}<div>${msg.text}</div>${buildMessageActions(msg, mine)}`;
       messages.appendChild(box);
       messages.scrollTop = messages.scrollHeight;
     }
 
     function renderMessages(list) {
+      state.currentMessages = Array.isArray(list) ? [...list] : [];
       messages.innerHTML = "";
       state.ids.clear();
       if (!state.active) { empty("Select a user from the list to begin chatting."); return; }
-      if (!list.length) { empty("No messages yet. Say hello to start the conversation."); return; }
-      list.forEach(append);
+      if (!state.currentMessages.length) { empty("No messages yet. Say hello to start the conversation."); return; }
+      state.currentMessages.forEach(append);
     }
 
     const removePending = id => { const el = messages.querySelector(`[data-local-id="${id}"]`); if (el) el.remove(); };
@@ -2041,6 +2173,21 @@
       if (last) touchMessageActivity(last);
       clearUnread(state.active._id);
       renderMessages(list);
+    }
+
+    async function updateMessageAction(messageId, text) {
+      const updated = await api(`/api/chat/messages/${encodeURIComponent(gid(messageId))}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: gid(state.user.id), text })
+      });
+      return updated.data;
+    }
+
+    async function deleteMessageAction(messageId) {
+      await api(`/api/chat/messages/${encodeURIComponent(gid(messageId))}?userId=${encodeURIComponent(gid(state.user.id))}`, {
+        method: "DELETE"
+      });
     }
 
     async function loadUsers(options = {}) {
@@ -2154,7 +2301,31 @@
         renderStats();
         renderUsers();
         updateDocumentTitle();
-        if (peer === activePeer) { clearEmpty(); append(msg); }
+        if (peer === activePeer) {
+          state.currentMessages = [...state.currentMessages.filter(item => gid(item._id) !== gid(msg._id)), msg];
+          clearEmpty();
+          append(msg);
+        }
+      });
+      socket.on("message:updated", payload => {
+        const msg = payload && payload.message;
+        if (!msg || !state.user) return;
+        const me = gid(state.user.id);
+        const participants = [gid(msg.sender && msg.sender._id), gid(msg.receiver && msg.receiver._id)];
+        if (!participants.includes(me)) return;
+        state.currentMessages = state.currentMessages.map(item => gid(item._id) === gid(msg._id) ? msg : item);
+        renderMessages(state.currentMessages);
+      });
+      socket.on("message:deleted", payload => {
+        if (!payload || !state.user) return;
+        const me = gid(state.user.id);
+        const participants = [gid(payload.senderId), gid(payload.receiverId)];
+        if (!participants.includes(me)) return;
+        state.currentMessages = state.currentMessages.filter(item => gid(item._id) !== gid(payload.messageId));
+        if (gid(state.editingMessageId) === gid(payload.messageId) || gid(state.replyTo && state.replyTo._id) === gid(payload.messageId)) {
+          resetComposerContext({ keepInput: false });
+        }
+        renderMessages(state.currentMessages);
       });
       socket.on("messages:read", payload => {
         if (!payload || !state.user) return;
@@ -2175,12 +2346,6 @@
         state.typingPeerId = "";
         renderHeader();
       });
-      socket.on("conversation:cleared", payload => {
-        if (!payload || !state.user || !state.active) return;
-        const me = gid(state.user.id), peer = gid(state.active._id);
-        const a = gid(payload.userId), b = gid(payload.chatWith);
-        if ((a === me && b === peer) || (a === peer && b === me)) renderMessages([]);
-      });
     }
 
     function disconnect() { if (socket) { stopTyping(); socket.disconnect(); socket = null; } }
@@ -2192,7 +2357,7 @@
       const chatStateKey = getChatStateStorageKey();
       state.token = ""; state.user = null; state.users = []; state.active = null;
       state.incomingRequests = []; state.outgoingRequests = []; state.discoverUsers = []; state.friendCount = 0; state.unreadMessageCount = 0; state.searchQuery = ""; state.showFindFriends = true;
-      state.typingPeerId = ""; state.isTyping = false;
+      state.typingPeerId = ""; state.isTyping = false; state.currentMessages = []; state.replyTo = null; state.editingMessageId = "";
       state.unread.clear(); state.activity.clear(); state.latestMessage.clear();
       state.notifiedRequests.clear(); state.announcedUnreadByUser.clear();
       localStorage.removeItem("token"); localStorage.removeItem("user");
@@ -2212,6 +2377,7 @@
       if (findFriendSearchInput) findFriendSearchInput.value = "";
       friendSearchQuery = "";
       findFriendSearchQuery = "";
+      resetComposerContext();
       showMainView();
       renderHeader();
     }
@@ -2292,21 +2458,42 @@
       if (!state.user || !state.active) { alert("Please select a user first."); return; }
       const text = messageInput.value.trim();
       if (!text) return;
+      if (state.editingMessageId) {
+        try {
+          const updated = await updateMessageAction(state.editingMessageId, text);
+          state.currentMessages = state.currentMessages.map(item => gid(item._id) === gid(updated._id) ? updated : item);
+          renderMessages(state.currentMessages);
+          resetComposerContext();
+          messageInput.focus();
+        } catch (err) {
+          alert(err.message || "Message update failed.");
+        }
+        return;
+      }
       const localId = `pending-${Date.now()}-${++state.pending}`;
+      const replyToId = gid(state.replyTo && state.replyTo._id);
       messageInput.value = "";
       stopTyping();
       clearEmpty();
-      append({ localId, pending: true, text, createdAt: Date.now(), sender: { _id: gid(state.user.id), username: state.user.username } });
+      append({
+        localId,
+        pending: true,
+        text,
+        replyTo: state.replyTo ? { text: state.replyTo.text, sender: state.replyTo.sender, _id: gid(state.replyTo._id) } : null,
+        createdAt: Date.now(),
+        sender: { _id: gid(state.user.id), username: state.user.username }
+      });
+      resetComposerContext({ keepInput: true });
       sendBtn.disabled = true;
       const fallback = () => api("/api/chat/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ senderId: gid(state.user.id), receiverId: gid(state.active._id), text })
+        body: JSON.stringify({ senderId: gid(state.user.id), receiverId: gid(state.active._id), text, replyToId })
       }).then(d => d.data);
       try {
         const sent = await new Promise((resolve, reject) => {
           if (!socket) { fallback().then(resolve).catch(reject); return; }
-          socket.emit("message:send", { senderId: gid(state.user.id), receiverId: gid(state.active._id), text }, async response => {
+          socket.emit("message:send", { senderId: gid(state.user.id), receiverId: gid(state.active._id), text, replyToId }, async response => {
             if (response && response.ok && response.message) { resolve(response.message); return; }
             try { resolve(await fallback()); } catch (err) { reject(err); }
           });
@@ -2321,16 +2508,6 @@
         messageInput.focus();
         alert(err.message || "Message send failed.");
       } finally { sendBtn.disabled = false; }
-    }
-
-    async function onDelete() {
-      if (!state.user || !state.active) { alert("Please select a user first."); return; }
-      if (!confirm(`Delete your conversation with ${state.active.username}? This removes those messages from the database.`)) return;
-      try {
-        const params = new URLSearchParams({ userId: gid(state.user.id), chatWith: gid(state.active._id) });
-        await api(`/api/chat/messages?${params.toString()}`, { method: "DELETE" });
-        renderMessages([]);
-      } catch (err) { alert(err.message || "Could not delete messages."); }
     }
 
     async function onLogout() {
@@ -2412,14 +2589,6 @@
       const current = document.documentElement.getAttribute("data-theme");
       setTheme(current === "dark" ? "light" : "dark");
     });
-    menuDeleteChat.addEventListener("click", () => {
-      settingsMenu.classList.remove("on");
-      if (state.active) {
-        onDelete();
-      } else {
-        alert("Please select a conversation first.");
-      }
-    });
     menuLogout.addEventListener("click", () => {
       settingsMenu.classList.remove("on");
       onLogout();
@@ -2456,10 +2625,44 @@
     messageInput.addEventListener("blur", () => {
       stopTyping();
     });
+    composeContextCancel.addEventListener("click", () => {
+      resetComposerContext();
+    });
+    messages.addEventListener("click", async e => {
+      const replyBtn = e.target.closest("[data-reply-message]");
+      const editBtn = e.target.closest("[data-edit-message]");
+      const deleteMessageBtn = e.target.closest("[data-delete-message]");
+
+      if (replyBtn) {
+        const message = findCurrentMessage(replyBtn.dataset.replyMessage);
+        if (message) setReplyContext(message);
+        return;
+      }
+
+      if (editBtn) {
+        const message = findCurrentMessage(editBtn.dataset.editMessage);
+        if (message) setEditContext(message);
+        return;
+      }
+
+      if (deleteMessageBtn) {
+        const messageId = deleteMessageBtn.dataset.deleteMessage;
+        if (!messageId || !confirm("Delete this message?")) return;
+        try {
+          await deleteMessageAction(messageId);
+          state.currentMessages = state.currentMessages.filter(item => gid(item._id) !== gid(messageId));
+          if (gid(state.editingMessageId) === gid(messageId) || gid(state.replyTo && state.replyTo._id) === gid(messageId)) {
+            resetComposerContext();
+          }
+          renderMessages(state.currentMessages);
+        } catch (err) {
+          alert(err.message || "Could not delete message.");
+        }
+      }
+    });
     loginForm.addEventListener("submit", onLogin);
     registerForm.addEventListener("submit", onRegister);
     messageForm.addEventListener("submit", onSend);
-    deleteBtn.addEventListener("click", onDelete);
     if (logoutBtn) logoutBtn.addEventListener("click", onLogout);
     toggleUsers.addEventListener("click", openSide);
     sidebarBackBtn.addEventListener("click", closeSide);
