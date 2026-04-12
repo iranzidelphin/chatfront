@@ -358,6 +358,17 @@
       padding:12px;border-radius:14px;border:1px solid var(--line);
       background:var(--tile-bg);
     }
+    button.stat-card{
+      width:100%;
+      text-align:left;
+      cursor:pointer;
+      color:var(--text);
+      transition:all .2s ease;
+    }
+    button.stat-card:hover{
+      border-color:var(--accent);
+      background:var(--accent-glow);
+    }
     .stat-card strong{display:block;font-size:1.1rem}
     .stat-card span{font-size:.78rem;color:var(--muted)}
     .network-panel{
@@ -458,6 +469,13 @@
     }
     .head-info strong{display:block;font-size:1rem}
     .head-info span{color:var(--muted);font-size:.86rem}
+    .typing-indicator{
+      margin-top:5px;
+      min-height:18px;
+      color:var(--accent-dark);
+      font-size:.78rem;
+      font-weight:700;
+    }
     .acts{
       display:grid;
       grid-template-columns:1fr 1fr;
@@ -544,6 +562,35 @@
       transform:none;
     }
     .send-arrow svg{width:20px;height:20px;margin-left:2px}
+    .request-summary{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:10px;
+      padding:16px;
+      border-bottom:1px solid var(--line);
+    }
+    .request-summary-card{
+      padding:14px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:var(--tile-bg);
+    }
+    .request-summary-card strong{
+      display:block;
+      font-size:1.2rem;
+      margin-bottom:4px;
+    }
+    .request-section{
+      padding:14px 16px 0;
+    }
+    .request-section h3{
+      font-size:.9rem;
+      font-weight:800;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      margin-bottom:10px;
+    }
 
     /* Sidebar toggle & overlay */
     .toggle{display:none}
@@ -839,10 +886,10 @@
               <strong id="messageCount">0</strong>
               <span>Messages</span>
             </div>
-            <div class="stat-card">
+            <button id="requestSummaryBtn" class="stat-card" type="button">
               <strong id="requestCount">0</strong>
               <span>Requests</span>
-            </div>
+            </button>
           </div>
           <div class="network-panel">
             <p class="network-title">Requests</p>
@@ -866,6 +913,7 @@
               <div class="head-info">
                 <strong id="chatTitle">Choose a conversation</strong>
                 <span id="chatSub">Pick an online user to start chatting.</span>
+                <div id="typingIndicator" class="typing-indicator" aria-live="polite"></div>
               </div>
               <div class="acts">
                 <button id="toggleUsers" class="btn ghost toggle" type="button" aria-label="Open users panel">Users</button>
@@ -918,6 +966,36 @@
             </div>
             <div id="findFriendListView" class="users-scroll scrollable"></div>
           </div>
+
+          <div id="chatViewRequests" class="chat-view-friends">
+            <div class="head">
+              <div class="head-info">
+                <strong>Friend Requests</strong>
+                <span>Review the latest requests first</span>
+              </div>
+              <div class="acts">
+                <button id="backFromRequests" class="btn ghost" type="button">Back</button>
+              </div>
+            </div>
+            <div class="request-summary">
+              <div class="request-summary-card">
+                <strong id="requestsReceivedCount">0</strong>
+                <span>Received requests</span>
+              </div>
+              <div class="request-summary-card">
+                <strong id="requestsSentCount">0</strong>
+                <span>Sent requests</span>
+              </div>
+            </div>
+            <div class="request-section">
+              <h3>Received</h3>
+            </div>
+            <div id="requestsReceivedList" class="users-scroll scrollable"></div>
+            <div class="request-section">
+              <h3>Sent</h3>
+            </div>
+            <div id="requestsSentList" class="users-scroll scrollable"></div>
+          </div>
         </div>
       </div>
     </section>
@@ -958,7 +1036,9 @@
       pending: 0,
       notifiedRequests: new Set(),
       announcedUnreadByUser: new Map(),
-      currentView: "main"
+      currentView: "main",
+      typingPeerId: "",
+      isTyping: false
     };
     let socket = null;
     let backendWarmupPromise = null;
@@ -981,7 +1061,9 @@
     const requestList = $("requestList"), findFriendList = $("findFriendList");
     const findFriendPanel = $("findFriendPanel"), findFriendToggle = $("findFriendToggle");
     const friendCountEl = $("friendCount"), messageCountEl = $("messageCount"), requestCountEl = $("requestCount");
+    const requestSummaryBtn = $("requestSummaryBtn");
     const chatTitle = $("chatTitle"), chatSub = $("chatSub");
+    const typingIndicator = $("typingIndicator");
     const messages = $("messages"), messageForm = $("messageForm");
     const messageInput = $("messageInput"), sendBtn = $("sendBtn");
     const deleteBtn = $("deleteBtn"), logoutBtn = $("logoutBtn");
@@ -1001,16 +1083,23 @@
     const chatViewMain = $("chatViewMain");
     const chatViewFriends = $("chatViewFriends");
     const chatViewFindFriend = $("chatViewFindFriend");
+    const chatViewRequests = $("chatViewRequests");
     const backFromFriends = $("backFromFriends");
     const backFromFindFriend = $("backFromFindFriend");
+    const backFromRequests = $("backFromRequests");
     const friendSearchInput = $("friendSearchInput");
     const findFriendSearchInput = $("findFriendSearchInput");
     const friendsListView = $("friendsListView");
     const findFriendListView = $("findFriendListView");
+    const requestsReceivedCount = $("requestsReceivedCount");
+    const requestsSentCount = $("requestsSentCount");
+    const requestsReceivedList = $("requestsReceivedList");
+    const requestsSentList = $("requestsSentList");
     const headerAvatar = $("headerAvatar");
     const headerUserName = $("headerUserName");
     let friendSearchQuery = "";
     let findFriendSearchQuery = "";
+    let typingTimer = null;
 
     /* ── UI Helpers ── */
     const setStatus = t => statusEl.textContent = t;
@@ -1061,17 +1150,21 @@
       chatViewMain.classList.toggle("on", viewName === "main");
       chatViewFriends.classList.toggle("on", viewName === "friends");
       chatViewFindFriend.classList.toggle("on", viewName === "findfriend");
+      chatViewRequests.classList.toggle("on", viewName === "requests");
       yourFriendBtn.classList.toggle("active", viewName === "friends");
       findFriendBtn.classList.toggle("active", viewName === "findfriend");
       if (viewName === "friends") {
         renderFriendsListView();
       } else if (viewName === "findfriend") {
         renderFindFriendListView();
+      } else if (viewName === "requests") {
+        renderRequestCenter();
       }
     };
     const showMainView = () => showChatView("main");
     const showYourFriendsView = () => showChatView("friends");
     const showFindFriendView = () => showChatView("findfriend");
+    const showRequestView = () => showChatView("requests");
     const stampActivity = (userId, when = Date.now()) => {
       const id = gid(userId);
       if (!id) return;
@@ -1100,6 +1193,63 @@
         networkRefreshTimer = null;
         loadUsers().catch(() => {});
       }, 40);
+    };
+    const sortRequestUsers = (users = []) =>
+      [...users].sort((a, b) => {
+        const rankDiff = Number(b.requestRank || 0) - Number(a.requestRank || 0);
+        if (rankDiff !== 0) return rankDiff;
+        return String(a.username || "").localeCompare(String(b.username || ""));
+      });
+    const sortDiscoverUsers = (users = []) => {
+      const relationWeight = relation => {
+        if (relation === "incoming") return 3;
+        if (relation === "outgoing") return 2;
+        if (relation === "friend") return 1;
+        return 0;
+      };
+      return [...users].sort((a, b) => {
+        const relationDiff = relationWeight(b.relation) - relationWeight(a.relation);
+        if (relationDiff !== 0) return relationDiff;
+        const rankDiff = Number(b.requestRank || 0) - Number(a.requestRank || 0);
+        if (rankDiff !== 0) return rankDiff;
+        return String(a.username || "").localeCompare(String(b.username || ""));
+      });
+    };
+    const renderTypingState = () => {
+      if (!typingIndicator) return;
+      if (!state.active || gid(state.active._id) !== gid(state.typingPeerId)) {
+        typingIndicator.textContent = "";
+        return;
+      }
+      const peerName = state.active.username || "Someone";
+      typingIndicator.textContent = `${peerName} is typing...`;
+    };
+    const emitTypingState = active => {
+      if (!socket || !state.user || !state.active) return;
+      socket.emit(active ? "typing:start" : "typing:stop", {
+        senderId: gid(state.user.id),
+        receiverId: gid(state.active._id)
+      }, () => {});
+    };
+    const stopTyping = () => {
+      if (!state.isTyping) return;
+      state.isTyping = false;
+      if (typingTimer) {
+        clearTimeout(typingTimer);
+        typingTimer = null;
+      }
+      emitTypingState(false);
+    };
+    const scheduleTypingStop = () => {
+      if (typingTimer) clearTimeout(typingTimer);
+      typingTimer = setTimeout(() => {
+        stopTyping();
+      }, 1200);
+    };
+    const updateActivePresence = () => {
+      if (!socket || !state.user) return;
+      const active = !document.hidden;
+      socket.emit("user:presence", { userId: gid(state.user.id), active }, () => {});
     };
     const updateDiscoverUser = (userId, updater) => {
       const targetId = gid(userId);
@@ -1429,6 +1579,7 @@
     /* ── Render Functions ── */
     function renderHeader() {
       renderAuthNavigation();
+      renderTypingState();
       if (!state.active) {
         chatTitle.textContent = "Choose a conversation";
         chatSub.textContent = "Pick a friend to start chatting.";
@@ -1443,7 +1594,7 @@
     function renderStats() {
       friendCountEl.textContent = String(state.friendCount || 0);
       messageCountEl.textContent = String(state.unreadMessageCount || 0);
-      requestCountEl.textContent = String((state.incomingRequests || []).length);
+      requestCountEl.textContent = String((state.incomingRequests || []).length + (state.outgoingRequests || []).length);
       updateDocumentTitle();
     }
 
@@ -1451,6 +1602,7 @@
       const friend = state.users.find(u => gid(u._id) === gid(userId)) || null;
       if (!friend) return;
       state.active = friend;
+      state.typingPeerId = "";
       clearUnread(friend._id);
       renderUsers();
       renderHeader();
@@ -1526,6 +1678,7 @@
       }
       renderStats();
       renderRequests();
+      renderRequestCenter();
       renderFindFriends();
       renderUsers();
       renderHeader();
@@ -1548,12 +1701,13 @@
         return;
       }
 
-      if (!state.incomingRequests.length) {
+      const incomingRequests = sortRequestUsers(state.incomingRequests || []);
+      if (!incomingRequests.length) {
         requestList.innerHTML = "";
         return;
       }
 
-      requestList.innerHTML = state.incomingRequests.map(user =>
+      requestList.innerHTML = incomingRequests.map(user =>
         `<div class="network-card" data-id="${gid(user._id)}">
           <strong>${user.username}</strong>
           <p>Sent you a friend request • ${user.friendCount || 0} friend${(user.friendCount || 0) === 1 ? "" : "s"}</p>
@@ -1572,6 +1726,48 @@
       );
     }
 
+    function renderRequestCenter() {
+      const incomingRequests = sortRequestUsers(state.incomingRequests || []);
+      const outgoingRequests = sortRequestUsers(state.outgoingRequests || []);
+      requestsReceivedCount.textContent = String(incomingRequests.length);
+      requestsSentCount.textContent = String(outgoingRequests.length);
+
+      requestsReceivedList.innerHTML = incomingRequests.length
+        ? incomingRequests.map(user =>
+          `<div class="network-card">
+            <strong>${user.username}</strong>
+            <p>Sent you a friend request • ${user.friendCount || 0} friend${(user.friendCount || 0) === 1 ? "" : "s"}</p>
+            <div class="action-row">
+              <button class="small-btn primary-action" type="button" data-accept="${gid(user._id)}">Confirm</button>
+              <button class="small-btn danger-action" type="button" data-reject="${gid(user._id)}">Reject</button>
+            </div>
+          </div>`
+        ).join("")
+        : '<div class="empty-state">No received requests yet.</div>';
+
+      requestsSentList.innerHTML = outgoingRequests.length
+        ? outgoingRequests.map(user =>
+          `<div class="network-card">
+            <strong>${user.username}</strong>
+            <p>Request sent • ${user.friendCount || 0} friend${(user.friendCount || 0) === 1 ? "" : "s"}</p>
+            <div class="action-row">
+              <button class="small-btn danger-action" type="button" data-cancel="${gid(user._id)}">Cancel Request</button>
+            </div>
+          </div>`
+        ).join("")
+        : '<div class="empty-state">No sent requests yet.</div>';
+
+      requestsReceivedList.querySelectorAll("[data-accept]").forEach(btn =>
+        btn.addEventListener("click", () => { respondToRequestAction(btn.dataset.accept, "accept"); })
+      );
+      requestsReceivedList.querySelectorAll("[data-reject]").forEach(btn =>
+        btn.addEventListener("click", () => { respondToRequestAction(btn.dataset.reject, "reject"); })
+      );
+      requestsSentList.querySelectorAll("[data-cancel]").forEach(btn =>
+        btn.addEventListener("click", () => { cancelFriendRequestAction(btn.dataset.cancel); })
+      );
+    }
+
     function renderFindFriends() {
       if (!state.user) {
         findFriendList.innerHTML = "";
@@ -1579,7 +1775,7 @@
       }
 
       const query = state.searchQuery || "";
-      const visibleUsers = state.discoverUsers.filter((user) => {
+      const visibleUsers = sortDiscoverUsers(state.discoverUsers).filter((user) => {
         if (!query) return true;
         const username = String(user.username || "").toLowerCase();
         const email = String(user.email || "").toLowerCase();
@@ -1712,7 +1908,7 @@
     function renderFindFriendListView() {
       if (!state.user) { findFriendListView.innerHTML = ""; return; }
       const query = findFriendSearchQuery || "";
-      let visibleUsers = state.discoverUsers.filter((user) => {
+      let visibleUsers = sortDiscoverUsers(state.discoverUsers).filter((user) => {
         if (!query) return true;
         const username = String(user.username || "").toLowerCase();
         const email = String(user.email || "").toLowerCase();
@@ -1884,12 +2080,31 @@
       socket = io(BACKEND_URL, { transports: ["websocket", "polling"] });
       socket.on("connect", () => {
         socket.emit("user:join", { userId: gid(state.user.id) });
+        updateActivePresence();
         setStatus("Connected to live chat");
         queueNetworkRefresh();
       });
       socket.on("disconnect", () => setStatus("Reconnecting to live chat"));
       socket.on("network:refresh", () => {
         queueNetworkRefresh();
+      });
+      socket.on("presence:updated", payload => {
+        if (!payload) return;
+        const userId = gid(payload.userId);
+        const nextStatus = Boolean(payload.isLoggedIn);
+        state.users = state.users.map(user => gid(user._id) === userId ? { ...user, isLoggedIn: nextStatus } : user);
+        state.discoverUsers = state.discoverUsers.map(user => gid(user._id) === userId ? { ...user, isLoggedIn: nextStatus } : user);
+        state.incomingRequests = state.incomingRequests.map(user => gid(user._id) === userId ? { ...user, isLoggedIn: nextStatus } : user);
+        state.outgoingRequests = state.outgoingRequests.map(user => gid(user._id) === userId ? { ...user, isLoggedIn: nextStatus } : user);
+        if (state.active && gid(state.active._id) === userId) {
+          state.active = { ...state.active, isLoggedIn: nextStatus };
+          renderHeader();
+        }
+        renderUsers();
+        renderFindFriends();
+        renderFriendsListView();
+        renderFindFriendListView();
+        renderRequestCenter();
       });
       socket.on("friend-request:new", payload => {
         const fromUser = payload && payload.fromUser;
@@ -1933,6 +2148,19 @@
         clearUnread(payload.chatWith);
         renderUsers();
       });
+      socket.on("typing:start", payload => {
+        if (!payload || !state.user) return;
+        const senderId = gid(payload.senderId);
+        if (!senderId || senderId === gid(state.user.id)) return;
+        state.typingPeerId = senderId;
+        renderHeader();
+      });
+      socket.on("typing:stop", payload => {
+        if (!payload) return;
+        if (gid(payload.senderId) !== gid(state.typingPeerId)) return;
+        state.typingPeerId = "";
+        renderHeader();
+      });
       socket.on("conversation:cleared", payload => {
         if (!payload || !state.user || !state.active) return;
         const me = gid(state.user.id), peer = gid(state.active._id);
@@ -1941,7 +2169,7 @@
       });
     }
 
-    function disconnect() { if (socket) { socket.disconnect(); socket = null; } }
+    function disconnect() { if (socket) { stopTyping(); socket.disconnect(); socket = null; } }
     function stopLoop() { if (state.timer) { clearInterval(state.timer); state.timer = null; } }
     function startLoop() { stopLoop(); state.timer = setInterval(() => loadUsers().catch(() => { }), 5000); }
 
@@ -1950,6 +2178,7 @@
       const chatStateKey = getChatStateStorageKey();
       state.token = ""; state.user = null; state.users = []; state.active = null;
       state.incomingRequests = []; state.outgoingRequests = []; state.discoverUsers = []; state.friendCount = 0; state.unreadMessageCount = 0; state.searchQuery = ""; state.showFindFriends = true;
+      state.typingPeerId = ""; state.isTyping = false;
       state.unread.clear(); state.activity.clear(); state.latestMessage.clear();
       state.notifiedRequests.clear(); state.announcedUnreadByUser.clear();
       localStorage.removeItem("token"); localStorage.removeItem("user");
@@ -1960,6 +2189,7 @@
       setFindFriendVisibility(true);
       renderStats();
       renderRequests();
+      renderRequestCenter();
       renderFindFriends();
       renderUsers(); renderMessages([]);
       if (headerAvatar) headerAvatar.textContent = "?";
@@ -2050,6 +2280,7 @@
       if (!text) return;
       const localId = `pending-${Date.now()}-${++state.pending}`;
       messageInput.value = "";
+      stopTyping();
       clearEmpty();
       append({ localId, pending: true, text, createdAt: Date.now(), sender: { _id: gid(state.user.id), username: state.user.username } });
       sendBtn.disabled = true;
@@ -2147,6 +2378,9 @@
     findFriendBtn.addEventListener("click", () => {
       showFindFriendView();
     });
+    requestSummaryBtn.addEventListener("click", () => {
+      showRequestView();
+    });
     settingsBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       settingsMenu.classList.toggle("on");
@@ -2182,6 +2416,9 @@
     backFromFindFriend.addEventListener("click", () => {
       showMainView();
     });
+    backFromRequests.addEventListener("click", () => {
+      showMainView();
+    });
     friendSearchInput.addEventListener("input", () => {
       friendSearchQuery = friendSearchInput.value.toLowerCase().trim();
       renderFriendsListView();
@@ -2190,6 +2427,21 @@
       findFriendSearchQuery = findFriendSearchInput.value.toLowerCase().trim();
       renderFindFriendListView();
     });
+    messageInput.addEventListener("input", () => {
+      if (!state.user || !state.active) return;
+      if (!messageInput.value.trim()) {
+        stopTyping();
+        return;
+      }
+      if (!state.isTyping) {
+        state.isTyping = true;
+        emitTypingState(true);
+      }
+      scheduleTypingStop();
+    });
+    messageInput.addEventListener("blur", () => {
+      stopTyping();
+    });
     loginForm.addEventListener("submit", onLogin);
     registerForm.addEventListener("submit", onRegister);
     messageForm.addEventListener("submit", onSend);
@@ -2197,8 +2449,16 @@
     if (logoutBtn) logoutBtn.addEventListener("click", onLogout);
     toggleUsers.addEventListener("click", openSide);
     overlay.addEventListener("click", closeSide);
+    document.addEventListener("visibilitychange", () => {
+      updateActivePresence();
+      if (document.hidden) stopTyping();
+    });
     addEventListener("hashchange", route);
-    addEventListener("beforeunload", () => { disconnect(); stopLoop(); });
+    addEventListener("beforeunload", () => {
+      updateActivePresence();
+      disconnect();
+      stopLoop();
+    });
 
     /* ── Boot ── */
     setFindFriendVisibility(true);
