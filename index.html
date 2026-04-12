@@ -1055,8 +1055,8 @@
     };
     const setFindFriendVisibility = () => {
       state.showFindFriends = true;
-      findFriendPanel.classList.remove("hidden");
-      findFriendToggle.textContent = "Refresh Users";
+      if (findFriendPanel) findFriendPanel.classList.remove("hidden");
+      if (findFriendToggle) findFriendToggle.textContent = "Refresh Users";
     };
     const showChatView = (viewName) => {
       state.currentView = viewName;
@@ -1379,10 +1379,12 @@
     });
 
     /* ── Search ── */
-    searchInput.addEventListener("input", () => {
-      state.searchQuery = searchInput.value.toLowerCase().trim();
-      renderFindFriends();
-    });
+    if (searchInput) {
+      searchInput.addEventListener("input", () => {
+        state.searchQuery = searchInput.value.toLowerCase().trim();
+        renderFindFriends();
+      });
+    }
 
     /* ── API Layer ── */
     const readResponseBody = async response => {
@@ -1956,7 +1958,7 @@
       localStorage.removeItem(chatStateKey);
       disconnect(); stopLoop(); stopIncomingSound();
       updateDocumentTitle();
-      searchInput.value = "";
+      if (searchInput) searchInput.value = "";
       setFindFriendVisibility(true);
       renderStats();
       renderRequests();
@@ -2136,9 +2138,11 @@
     document.querySelectorAll("[data-link]").forEach(a =>
       a.addEventListener("click", e => { e.preventDefault(); go(a.dataset.link); })
     );
-    findFriendToggle.addEventListener("click", () => {
-      queueNetworkRefresh();
-    });
+    if (findFriendToggle) {
+      findFriendToggle.addEventListener("click", () => {
+        queueNetworkRefresh();
+      });
+    }
     yourFriendBtn.addEventListener("click", () => {
       showYourFriendsView();
     });
@@ -2197,7 +2201,7 @@
     registerForm.addEventListener("submit", onRegister);
     messageForm.addEventListener("submit", onSend);
     deleteBtn.addEventListener("click", onDelete);
-    logoutBtn.addEventListener("click", onLogout);
+    if (logoutBtn) logoutBtn.addEventListener("click", onLogout);
     toggleUsers.addEventListener("click", openSide);
     overlay.addEventListener("click", closeSide);
     addEventListener("hashchange", route);
